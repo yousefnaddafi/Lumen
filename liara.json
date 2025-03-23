@@ -1,0 +1,8 @@
+{
+  "app": "clever-lichterman-qq23yrk17",
+  "port": 3000,
+  "build": {
+    "location": "iran"
+  },
+  "disks": []
+}

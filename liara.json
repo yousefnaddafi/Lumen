@@ -1,6 +1,6 @@
 {
   "app": "clever-lichterman-qq23yrk17",
-  "port": 3000,
+  "port": 80,
   "dotnet": {
     "version": "9.0"
   },

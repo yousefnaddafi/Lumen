@@ -222,12 +222,29 @@
             }
 
         .menu-details {
-            flex: 1;
+            z-index: 100;
+            position: absolute;
+            width: 70%;
+            background-color: rgba(255, 255, 255, 0.9); /* Slightly darker opacity */
+            bottom: -40%;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            background-color: white;
+
+            /* flex: 1;
             direction: rtl;
             text-align: right;
             img {
 
-            }
+            } */
         }
 
         .menu-item-title {
@@ -323,7 +340,7 @@
 
 
 
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">اسپرسو ۱</div>
                         <div class="menu-item-desc">طعم اسپرسوی خالص و قوی.</div>
@@ -331,7 +348,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="اسپرسو ۱">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">اسپرسو ۲</div>
                         <div class="menu-item-desc">شات قدرتمند از اسپرسوی غنی.</div>
@@ -339,7 +356,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="اسپرسو ۲">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">اسپرسو ۳</div>
                         <div class="menu-item-desc">تعادل عالی از قدرت و عطر.</div>
@@ -347,7 +364,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="اسپرسو ۳">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">اسپرسو ۴</div>
                         <div class="menu-item-desc">ملایم و غلیظ، مناسب دوستداران اصلی.</div>
@@ -355,7 +372,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="اسپرسو ۴">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">اسپرسو ۵</div>
                         <div class="menu-item-desc">طعم عمیق و غنی برای انرژی فوری.</div>
@@ -371,7 +388,7 @@
             <h2>آمریکانو</h2>
             <div class="menu-grid">
                 <!-- ۵ مورد برای آمریکانو -->
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">آمریکانو ۱</div>
                         <div class="menu-item-desc">اسپرسو رقیق‌شده برای طعمی ملایم.</div>
@@ -379,7 +396,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="آمریکانو ۱">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">آمریکانو ۲</div>
                         <div class="menu-item-desc">گرم و دلنشین با طعمی آرام.</div>
@@ -387,7 +404,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="آمریکانو ۲">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">آمریکانو ۳</div>
                         <div class="menu-item-desc">کلاسیک و دلپذیر، مناسب برای هر زمان.</div>
@@ -395,7 +412,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="آمریکانو ۳">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">آمریکانو ۴</div>
                         <div class="menu-item-desc">ترکیب غنی با پس‌طعمی قوی.</div>
@@ -403,7 +420,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="آمریکانو ۴">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">آمریکانو ۵</div>
                         <div class="menu-item-desc">مقدمه‌ای ملایم برای اسپرسوی ما.</div>
@@ -419,7 +436,7 @@
             <h2>لاته</h2>
             <div class="menu-grid">
                 <!-- ۵ مورد برای لاته -->
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">لاته ۱</div>
                         <div class="menu-item-desc">شیر بخارپز شده با اسپرسوی کامل.</div>
@@ -427,7 +444,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="لاته ۱">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">لاته ۲</div>
                         <div class="menu-item-desc">ملایم، لطیف و دلنشین.</div>
@@ -435,7 +452,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="لاته ۲">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">لاته ۳</div>
                         <div class="menu-item-desc">ترکیب هماهنگ اسپرسو و شیر بخارپز.</div>
@@ -443,7 +460,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="لاته ۳">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">لاته ۴</div>
                         <div class="menu-item-desc">بافت مخملینی با طعمی غنی.</div>
@@ -451,7 +468,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="لاته ۴">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">لاته ۵</div>
                         <div class="menu-item-desc">یک لیوان کلاسیک از دلپذیری و گرما.</div>
@@ -467,7 +484,7 @@
             <h2>کاپوچینو</h2>
             <div class="menu-grid">
                 <!-- ۵ مورد برای کاپوچینو -->
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">کاپوچینو ۱</div>
                         <div class="menu-item-desc">ترکیبی متعادل از شیر بخارپز و اسپرسو.</div>
@@ -475,7 +492,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="کاپوچینو ۱">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">کاپوچینو ۲</div>
                         <div class="menu-item-desc">ترکیب دلپذیر از اسپرسو غنی و کف سبک.</div>
@@ -483,7 +500,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="کاپوچینو ۲">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">کاپوچینو ۳</div>
                         <div class="menu-item-desc">سبک، کف‌دار و پر از شخصیت.</div>
@@ -491,7 +508,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="کاپوچینو ۳">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">کاپوچینو ۴</div>
                         <div class="menu-item-desc">یک لذت کلاسیک با نت‌های غنی اسپرسو.</div>
@@ -499,7 +516,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="کاپوچینو ۴">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">کاپوچینو ۵</div>
                         <div class="menu-item-desc">صاف، کرمی و معطر.</div>
@@ -515,7 +532,7 @@
             <h2>موکا</h2>
             <div class="menu-grid">
                 <!-- ۵ مورد برای موکا -->
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">موکا ۱</div>
                         <div class="menu-item-desc">ترکیب بی‌نظیر شکلات و اسپرسو.</div>
@@ -523,7 +540,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="موکا ۱">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">موکا ۲</div>
                         <div class="menu-item-desc">طعم موکای غنی با پایان مخملین.</div>
@@ -531,7 +548,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="موکا ۲">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">موکا ۳</div>
                         <div class="menu-item-desc">یک خوراک دکادنت و لذیذ شکلاتی.</div>
@@ -539,7 +556,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="موکا ۳">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">موکا ۴</div>
                         <div class="menu-item-desc">طعم قوی و صاف که رضایت‌بخش است.</div>
@@ -547,7 +564,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="موکا ۴">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">موکا ۵</div>
                         <div class="menu-item-desc">ترکیبی مغرور از خامه و قهوه.</div>
@@ -563,7 +580,7 @@
             <h2>کولد برو</h2>
             <div class="menu-grid">
                 <!-- ۵ مورد برای کولد برو -->
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">کولد برو ۱</div>
                         <div class="menu-item-desc">خونسرد شده برای طعمی ترد و تازه.</div>
@@ -571,7 +588,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="کولد برو ۱">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">کولد برو ۲</div>
                         <div class="menu-item-desc">ملایم و آرامبخش برای روزهای گرم.</div>
@@ -579,7 +596,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="کولد برو ۲">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">کולד برو ۳</div>
                         <div class="menu-item-desc">طعم ملایم و خنک برای انرژی تازه.</div>
@@ -587,7 +604,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="کولد برو ۳">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">کولد برو ۴</div>
                         <div class="menu-item-desc">ترکیبی جسورانه برای یک شروع مدرن.</div>
@@ -595,7 +612,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="کولد برو ۴">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">کولد برو ۵</div>
                         <div class="menu-item-desc">تازه و احیا کننده در هر جرعه.</div>
@@ -611,7 +628,7 @@
             <h2>فراپه</h2>
             <div class="menu-grid">
                 <!-- ۵ مورد برای فراپه -->
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">فراپه ۱</div>
                         <div class="menu-item-desc">قهوه یخ زده مخلوط با کمی خامه.</div>
@@ -619,7 +636,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="فراپه ۱">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">فراپه ۲</div>
                         <div class="menu-item-desc">یخ زده، خامه‌ای و بی نهایت دلچسب.</div>
@@ -627,7 +644,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="فراپه ۲">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">فراپه ۳</div>
                         <div class="menu-item-desc">مخلوطی دلنشین از قهوه و حس تابستانی.</div>
@@ -635,7 +652,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="فراپه ۳">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">فراپه ۴</div>
                         <div class="menu-item-desc">صاف، خنک و کاملاً روح‌بخش.</div>
@@ -643,7 +660,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="فراپه ۴">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">فراپه ۵</div>
                         <div class="menu-item-desc">نمونه‌ای عالی برای یک بعدازظهر آفتابی.</div>
@@ -659,7 +676,7 @@
             <h2>ویژه</h2>
             <div class="menu-grid">
                 <!-- ۵ مورد برای ویژه -->
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">ویژه ۱</div>
                         <div class="menu-item-desc">ترکیبی منحصر به فرد برای شما.</div>
@@ -667,7 +684,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="ویژه ۱">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">ویژه ۲</div>
                         <div class="menu-item-desc">طعم‌های غنی و پیچیده با نوآوری‌های جدید.</div>
@@ -675,7 +692,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="ویژه ۲">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">ویژه ۳</div>
                         <div class="menu-item-desc">با علاقه و خلاقیت منحصر به فرد تهیه شده است.</div>
@@ -683,7 +700,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="ویژه ۳">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">ویژه ۴</div>
                         <div class="menu-item-desc">یک تغییر متفاوت در طعم‌های کلاسیک.</div>
@@ -691,7 +708,7 @@
                     </div>
                     <img src="img/coffee.jpg" alt="ویژه ۴">
                 </div>
-                <div class="menu-card">
+                <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">ویژه ۵</div>
                         <div class="menu-item-desc">مخصوص عاشقان طعم‌های خارق‌العاده.</div>

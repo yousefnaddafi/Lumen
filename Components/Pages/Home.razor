@@ -15,7 +15,7 @@
 
         @@font-face {
             font-family: 'Sahel';
-            src: url('/fonts/Sahel-Black.ttf') format('truetype');
+            src: url('/fonts/Sahel.ttf') format('truetype');
         }
 
         div {
@@ -96,7 +96,7 @@
         /* Header - Video Background Section */
         header {
             position: relative;
-            height: 100vh;
+            height: 90vh;
             width: 100%;
             overflow: hidden;
         }
@@ -168,20 +168,35 @@
             gap: 10px;
         }
 
+        .insta-button{
+            border: black;
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-size: 1em;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+            flex: 0 0 auto;
+            transition: background-color 0.3s, transform 0.3s, border 0.3s;
+            background-color: #FFBE98;
+        }
+
         .category-tag {
-            background-color: rgba(200, 200, 200, 0.5);
+            background-color: white;
+            border:black;
             border-radius: 20px;
             padding: 10px 20px;
             font-size: 1em;
+            font-weight:800;
             cursor: pointer;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
             flex: 0 0 auto;
             transition: background-color 0.3s, transform 0.3s, border 0.3s;
         }
 
             .category-tag.active {
-                border: 2px solid #87CEFA;
                 transform: scale(1.05);
-                background-color: rgba(200, 200, 200, 1);
+                background-color: #FFBE98;
             }
 
         @@media (max-width: 600px) {
@@ -193,7 +208,7 @@
 
         /* Menu Sections */
         .menu-section {
-            padding: 40px 20px;
+            /* padding: 40px 20px; */
             background-color: #fafafa;
         }
 
@@ -227,9 +242,9 @@
 
             .menu-card img {
                 border-radius: 20px;
-                width: 85%;
+                width: 86%;
                 height: auto;
-                margin-right: 20px;
+                margin-right: 7%;
                 aspect-ratio:6/3;
             }
 
@@ -238,7 +253,7 @@
             position: absolute;
             width: 60%;
             background-color: rgba(255, 255, 255, 0.9); /* Slightly darker opacity */
-            bottom: -50%;
+            bottom: -40%;
             left: 50%;
             transform: translateX(-50%);
             /* text-align: center; */
@@ -250,7 +265,7 @@
             box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
             border-radius: 10px;
             background-color: white;
-            aspect-ratio :6/3;
+            aspect-ratio :7/3;
             /* flex: 1;
                     direction: rtl;
                     text-align: right;
@@ -264,6 +279,7 @@
             font-size: 16px;
             color: black;
             margin-bottom: 8px;
+            font-weight:800;
         }
 
         .menu-item-desc {
@@ -319,8 +335,10 @@
         </video>
         <div class="hero-overlay">
             <img src="img/Lumenblack.png" alt="لوگوی لومِن" class="logo">
-            <h1>قهوه لومِن</h1>
-            <p class="tagline">جایی که هر جرعه، درخشش خاص خود را دارد</p>
+            @* <h1>قهوه لومِن</h1>
+            <p class="tagline">جایی که هر جرعه، درخشش خاص خود را دارد</p> *@
+            <div class="insta-button" style="border-radius:10px" data-target="espresso">follow us</div>
+            @* <button style="color: white;padding:5px;border-radius:5px;width:30%;background-color: #FFBE98;font-weight:bold;box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.1);">follow us</button> *@
         </div>
     </header>
 

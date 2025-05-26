@@ -12,27 +12,33 @@
             margin: 0;
             padding: 0;
         }
+
         @@font-face {
             font-family: 'Sahel';
-            src : url('/fonts/Sahel-Black.ttf') format('truetype');
+            src: url('/fonts/Sahel-Black.ttf') format('truetype');
         }
-        div{
-            position:relative;
+
+        div {
+            position: relative;
         }
+
         container {
             position: relative;
             width: 80%; /* Adjust as needed */
             margin: auto;
-            display:inline-block;
+            display: inline-block;
         }
 
         .background-image {
             width: 100%;
             display: block;
+            border-radius: 20px;
+            margin-bottom: 40%;
+            aspect-ratio: 5/3;
         }
 
         .overlay-box {
-            z-index:100;
+            z-index: 100;
             position: absolute;
             width: 80%;
             height: 150px;
@@ -142,6 +148,8 @@
             padding: 10px 0;
             border-bottom: 1px solid #ddd;
             transition: all 0.3s ease;
+            scroll-behavior: smooth;
+            display: flex;
         }
 
             .category-slider.sticky {
@@ -155,6 +163,7 @@
 
         .category-container {
             display: flex;
+            flex-wrap: nowrap;
             margin: 0 20px;
             gap: 10px;
         }
@@ -174,14 +183,13 @@
                 transform: scale(1.05);
                 background-color: rgba(200, 200, 200, 1);
             }
+
         @@media (max-width: 600px) {
-            .category-tag
-
-        {
-            min-width: 120px;
+            .category-tag {
+                min-width: 120px;
+            }
         }
 
-        }
 
         /* Menu Sections */
         .menu-section {
@@ -212,24 +220,28 @@
             background: transparent;
             border: none;
             box-shadow: none;
+            background-size: cover;
+            background-position: center;
+            margin-bottom:90px;
         }
 
             .menu-card img {
                 border-radius: 20px;
-                width: 120px;
+                width: 85%;
                 height: auto;
                 margin-right: 20px;
+                aspect-ratio:6/3;
             }
 
         .menu-details {
             z-index: 100;
             position: absolute;
-            width: 70%;
+            width: 60%;
             background-color: rgba(255, 255, 255, 0.9); /* Slightly darker opacity */
-            bottom: -40%;
+            bottom: -50%;
             left: 50%;
             transform: translateX(-50%);
-            text-align: center;
+            /* text-align: center; */
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -238,29 +250,34 @@
             box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
             border-radius: 10px;
             background-color: white;
-
+            aspect-ratio :6/3;
             /* flex: 1;
-            direction: rtl;
-            text-align: right;
-            img {
+                    direction: rtl;
+                    text-align: right;
+                    img {
 
-            } */
+                    } */
         }
 
         .menu-item-title {
-            font-size: 1.2em;
-            color: #a79c94;
+            margin-left: auto;
+            font-size: 16px;
+            color: black;
             margin-bottom: 8px;
-            font-weight: bold;
         }
 
         .menu-item-desc {
-            color: #555;
-            font-size: 0.95em;
+            margin-left: auto;
+            color: #333;
+            font-size: 11px;
             margin-bottom: 5px;
+            font-weight:100;
+            float:right;
         }
 
         .menu-item-price {
+            font-size: 14px;
+            margin-left: auto;
             font-weight: bold;
             color: #333;
         }
@@ -291,6 +308,7 @@
             line-height: 1;
         }
     </style>
+
 </head>
 <body>
     <!-- Hero Video Section -->
@@ -324,7 +342,6 @@
     <div id="menu">
         <!-- اسپرسو Section -->
         <section id="espresso" class="menu-section">
-            <h2>اسپرسو</h2>
             <div class="menu-grid">
                 <!-- ۵ مورد برای اسپرسو -->
                 @* <div class="item-wrapper">
@@ -344,15 +361,15 @@
                     <div class="menu-details">
                         <div class="menu-item-title">اسپرسو ۱</div>
                         <div class="menu-item-desc">طعم اسپرسوی خالص و قوی.</div>
-                        <div class="menu-item-price">۳.۰۰ دلار</div>
+                        <div class="menu-item-price">۳.۰۰ تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="اسپرسو ۱">
+                    <img src="img/coffee.jpg" alt="اسپرسو ۱" >
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">اسپرسو ۲</div>
                         <div class="menu-item-desc">شات قدرتمند از اسپرسوی غنی.</div>
-                        <div class="menu-item-price">۳.۱۰ دلار</div>
+                        <div class="menu-item-price">۳.۱۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="اسپرسو ۲">
                 </div>
@@ -360,7 +377,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">اسپرسو ۳</div>
                         <div class="menu-item-desc">تعادل عالی از قدرت و عطر.</div>
-                        <div class="menu-item-price">۳.۲۰ دلار</div>
+                        <div class="menu-item-price">۳.۲۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="اسپرسو ۳">
                 </div>
@@ -368,7 +385,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">اسپرسو ۴</div>
                         <div class="menu-item-desc">ملایم و غلیظ، مناسب دوستداران اصلی.</div>
-                        <div class="menu-item-price">۳.۳۰ دلار</div>
+                        <div class="menu-item-price">۳.۳۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="اسپرسو ۴">
                 </div>
@@ -376,7 +393,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">اسپرسو ۵</div>
                         <div class="menu-item-desc">طعم عمیق و غنی برای انرژی فوری.</div>
-                        <div class="menu-item-price">۳.۴۰ دلار</div>
+                        <div class="menu-item-price">۳.۴۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="اسپرسو ۵">
                 </div>
@@ -385,14 +402,13 @@
 
         <!-- آمریکانو Section -->
         <section id="americano" class="menu-section">
-            <h2>آمریکانو</h2>
             <div class="menu-grid">
                 <!-- ۵ مورد برای آمریکانو -->
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">آمریکانو ۱</div>
                         <div class="menu-item-desc">اسپرسو رقیق‌شده برای طعمی ملایم.</div>
-                        <div class="menu-item-price">۳.۵۰ دلار</div>
+                        <div class="menu-item-price">۳.۵۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="آمریکانو ۱">
                 </div>
@@ -400,7 +416,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">آمریکانو ۲</div>
                         <div class="menu-item-desc">گرم و دلنشین با طعمی آرام.</div>
-                        <div class="menu-item-price">۳.۶۰ دلار</div>
+                        <div class="menu-item-price">۳.۶۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="آمریکانو ۲">
                 </div>
@@ -408,7 +424,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">آمریکانو ۳</div>
                         <div class="menu-item-desc">کلاسیک و دلپذیر، مناسب برای هر زمان.</div>
-                        <div class="menu-item-price">۳.۷۰ دلار</div>
+                        <div class="menu-item-price">۳.۷۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="آمریکانو ۳">
                 </div>
@@ -416,7 +432,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">آمریکانو ۴</div>
                         <div class="menu-item-desc">ترکیب غنی با پس‌طعمی قوی.</div>
-                        <div class="menu-item-price">۳.۸۰ دلار</div>
+                        <div class="menu-item-price">۳.۸۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="آمریکانو ۴">
                 </div>
@@ -424,7 +440,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">آمریکانو ۵</div>
                         <div class="menu-item-desc">مقدمه‌ای ملایم برای اسپرسوی ما.</div>
-                        <div class="menu-item-price">۳.۹۰ دلار</div>
+                        <div class="menu-item-price">۳.۹۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="آمریکانو ۵">
                 </div>
@@ -433,14 +449,13 @@
 
         <!-- لاته Section -->
         <section id="latte" class="menu-section">
-            <h2>لاته</h2>
             <div class="menu-grid">
                 <!-- ۵ مورد برای لاته -->
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">لاته ۱</div>
                         <div class="menu-item-desc">شیر بخارپز شده با اسپرسوی کامل.</div>
-                        <div class="menu-item-price">۴.۰۰ دلار</div>
+                        <div class="menu-item-price">۴.۰۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="لاته ۱">
                 </div>
@@ -448,7 +463,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">لاته ۲</div>
                         <div class="menu-item-desc">ملایم، لطیف و دلنشین.</div>
-                        <div class="menu-item-price">۴.۱۰ دلار</div>
+                        <div class="menu-item-price">۴.۱۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="لاته ۲">
                 </div>
@@ -456,7 +471,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">لاته ۳</div>
                         <div class="menu-item-desc">ترکیب هماهنگ اسپرسو و شیر بخارپز.</div>
-                        <div class="menu-item-price">۴.۲۰ دلار</div>
+                        <div class="menu-item-price">۴.۲۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="لاته ۳">
                 </div>
@@ -464,7 +479,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">لاته ۴</div>
                         <div class="menu-item-desc">بافت مخملینی با طعمی غنی.</div>
-                        <div class="menu-item-price">۴.۳۰ دلار</div>
+                        <div class="menu-item-price">۴.۳۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="لاته ۴">
                 </div>
@@ -472,7 +487,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">لاته ۵</div>
                         <div class="menu-item-desc">یک لیوان کلاسیک از دلپذیری و گرما.</div>
-                        <div class="menu-item-price">۴.۴۰ دلار</div>
+                        <div class="menu-item-price">۴.۴۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="لاته ۵">
                 </div>
@@ -481,14 +496,13 @@
 
         <!-- کاپوچینو Section -->
         <section id="cappuccino" class="menu-section">
-            <h2>کاپوچینو</h2>
             <div class="menu-grid">
                 <!-- ۵ مورد برای کاپوچینو -->
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">کاپوچینو ۱</div>
                         <div class="menu-item-desc">ترکیبی متعادل از شیر بخارپز و اسپرسو.</div>
-                        <div class="menu-item-price">۴.۵۰ دلار</div>
+                        <div class="menu-item-price">۴.۵۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="کاپوچینو ۱">
                 </div>
@@ -496,7 +510,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">کاپوچینو ۲</div>
                         <div class="menu-item-desc">ترکیب دلپذیر از اسپرسو غنی و کف سبک.</div>
-                        <div class="menu-item-price">۴.۶۰ دلار</div>
+                        <div class="menu-item-price">۴.۶۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="کاپوچینو ۲">
                 </div>
@@ -504,7 +518,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">کاپوچینو ۳</div>
                         <div class="menu-item-desc">سبک، کف‌دار و پر از شخصیت.</div>
-                        <div class="menu-item-price">۴.۷۰ دلار</div>
+                        <div class="menu-item-price">۴.۷۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="کاپوچینو ۳">
                 </div>
@@ -512,7 +526,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">کاپوچینو ۴</div>
                         <div class="menu-item-desc">یک لذت کلاسیک با نت‌های غنی اسپرسو.</div>
-                        <div class="menu-item-price">۴.۸۰ دلار</div>
+                        <div class="menu-item-price">۴.۸۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="کاپوچینو ۴">
                 </div>
@@ -520,7 +534,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">کاپوچینو ۵</div>
                         <div class="menu-item-desc">صاف، کرمی و معطر.</div>
-                        <div class="menu-item-price">۴.۹۰ دلار</div>
+                        <div class="menu-item-price">۴.۹۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="کاپوچینو ۵">
                 </div>
@@ -529,14 +543,13 @@
 
         <!-- موکا Section -->
         <section id="mocha" class="menu-section">
-            <h2>موکا</h2>
             <div class="menu-grid">
                 <!-- ۵ مورد برای موکا -->
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">موکا ۱</div>
                         <div class="menu-item-desc">ترکیب بی‌نظیر شکلات و اسپرسو.</div>
-                        <div class="menu-item-price">۵.۰۰ دلار</div>
+                        <div class="menu-item-price">۵.۰۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="موکا ۱">
                 </div>
@@ -544,7 +557,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">موکا ۲</div>
                         <div class="menu-item-desc">طعم موکای غنی با پایان مخملین.</div>
-                        <div class="menu-item-price">۵.۱۰ دلار</div>
+                        <div class="menu-item-price">۵.۱۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="موکا ۲">
                 </div>
@@ -552,7 +565,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">موکا ۳</div>
                         <div class="menu-item-desc">یک خوراک دکادنت و لذیذ شکلاتی.</div>
-                        <div class="menu-item-price">۵.۲۰ دلار</div>
+                        <div class="menu-item-price">۵.۲۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="موکا ۳">
                 </div>
@@ -560,7 +573,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">موکا ۴</div>
                         <div class="menu-item-desc">طعم قوی و صاف که رضایت‌بخش است.</div>
-                        <div class="menu-item-price">۵.۳۰ دلار</div>
+                        <div class="menu-item-price">۵.۳۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="موکا ۴">
                 </div>
@@ -568,7 +581,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">موکا ۵</div>
                         <div class="menu-item-desc">ترکیبی مغرور از خامه و قهوه.</div>
-                        <div class="menu-item-price">۵.۴۰ دلار</div>
+                        <div class="menu-item-price">۵.۴۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="موکا ۵">
                 </div>
@@ -577,14 +590,13 @@
 
         <!-- کولد برو Section -->
         <section id="coldbrew" class="menu-section">
-            <h2>کولد برو</h2>
             <div class="menu-grid">
                 <!-- ۵ مورد برای کولد برو -->
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">کولد برو ۱</div>
                         <div class="menu-item-desc">خونسرد شده برای طعمی ترد و تازه.</div>
-                        <div class="menu-item-price">۴.۵۰ دلار</div>
+                        <div class="menu-item-price">۴.۵۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="کولد برو ۱">
                 </div>
@@ -592,7 +604,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">کولد برو ۲</div>
                         <div class="menu-item-desc">ملایم و آرامبخش برای روزهای گرم.</div>
-                        <div class="menu-item-price">۴.۶۰ دلار</div>
+                        <div class="menu-item-price">۴.۶۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="کولد برو ۲">
                 </div>
@@ -600,7 +612,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">کולד برو ۳</div>
                         <div class="menu-item-desc">طعم ملایم و خنک برای انرژی تازه.</div>
-                        <div class="menu-item-price">۴.۷۰ دلار</div>
+                        <div class="menu-item-price">۴.۷۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="کولد برو ۳">
                 </div>
@@ -608,7 +620,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">کولد برو ۴</div>
                         <div class="menu-item-desc">ترکیبی جسورانه برای یک شروع مدرن.</div>
-                        <div class="menu-item-price">۴.۸۰ دلار</div>
+                        <div class="menu-item-price">۴.۸۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="کولد برو ۴">
                 </div>
@@ -616,7 +628,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">کولد برو ۵</div>
                         <div class="menu-item-desc">تازه و احیا کننده در هر جرعه.</div>
-                        <div class="menu-item-price">۴.۹۰ دلار</div>
+                        <div class="menu-item-price">۴.۹۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="کولد برو ۵">
                 </div>
@@ -625,14 +637,13 @@
 
         <!-- فراپه Section -->
         <section id="frappe" class="menu-section">
-            <h2>فراپه</h2>
             <div class="menu-grid">
                 <!-- ۵ مورد برای فراپه -->
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">فراپه ۱</div>
                         <div class="menu-item-desc">قهوه یخ زده مخلوط با کمی خامه.</div>
-                        <div class="menu-item-price">۵.۰۰ دلار</div>
+                        <div class="menu-item-price">۵.۰۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="فراپه ۱">
                 </div>
@@ -640,7 +651,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">فراپه ۲</div>
                         <div class="menu-item-desc">یخ زده، خامه‌ای و بی نهایت دلچسب.</div>
-                        <div class="menu-item-price">۵.۱۰ دلار</div>
+                        <div class="menu-item-price">۵.۱۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="فراپه ۲">
                 </div>
@@ -648,7 +659,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">فراپه ۳</div>
                         <div class="menu-item-desc">مخلوطی دلنشین از قهوه و حس تابستانی.</div>
-                        <div class="menu-item-price">۵.۲۰ دلار</div>
+                        <div class="menu-item-price">۵.۲۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="فراپه ۳">
                 </div>
@@ -656,7 +667,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">فراپه ۴</div>
                         <div class="menu-item-desc">صاف، خنک و کاملاً روح‌بخش.</div>
-                        <div class="menu-item-price">۵.۳۰ دلار</div>
+                        <div class="menu-item-price">۵.۳۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="فراپه ۴">
                 </div>
@@ -664,7 +675,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">فراپه ۵</div>
                         <div class="menu-item-desc">نمونه‌ای عالی برای یک بعدازظهر آفتابی.</div>
-                        <div class="menu-item-price">۵.۴۰ دلار</div>
+                        <div class="menu-item-price">۵.۴۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="فراپه ۵">
                 </div>
@@ -673,14 +684,13 @@
 
         <!-- ویژه Section -->
         <section id="specialty" class="menu-section">
-            <h2>ویژه</h2>
             <div class="menu-grid">
                 <!-- ۵ مورد برای ویژه -->
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
                         <div class="menu-item-title">ویژه ۱</div>
                         <div class="menu-item-desc">ترکیبی منحصر به فرد برای شما.</div>
-                        <div class="menu-item-price">۶.۰۰ دلار</div>
+                        <div class="menu-item-price">۶.۰۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="ویژه ۱">
                 </div>
@@ -688,7 +698,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">ویژه ۲</div>
                         <div class="menu-item-desc">طعم‌های غنی و پیچیده با نوآوری‌های جدید.</div>
-                        <div class="menu-item-price">۶.۱۰ دلار</div>
+                        <div class="menu-item-price">۶.۱۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="ویژه ۲">
                 </div>
@@ -696,7 +706,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">ویژه ۳</div>
                         <div class="menu-item-desc">با علاقه و خلاقیت منحصر به فرد تهیه شده است.</div>
-                        <div class="menu-item-price">۶.۲۰ دلار</div>
+                        <div class="menu-item-price">۶.۲۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="ویژه ۳">
                 </div>
@@ -704,7 +714,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">ویژه ۴</div>
                         <div class="menu-item-desc">یک تغییر متفاوت در طعم‌های کلاسیک.</div>
-                        <div class="menu-item-price">۶.۳۰ دلار</div>
+                        <div class="menu-item-price">۶.۳۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="ویژه ۴">
                 </div>
@@ -712,7 +722,7 @@
                     <div class="menu-details">
                         <div class="menu-item-title">ویژه ۵</div>
                         <div class="menu-item-desc">مخصوص عاشقان طعم‌های خارق‌العاده.</div>
-                        <div class="menu-item-price">۶.۴۰ دلار</div>
+                        <div class="menu-item-price">۶.۴۰ تومان</div>
                     </div>
                     <img src="img/coffee.jpg" alt="ویژه ۵">
                 </div>
@@ -725,6 +735,26 @@
 
     <!-- JavaScript for Sticky Slider, Active Tag Highlighting & Auto-Scroll, and Scroll-to-Top -->
     <script>
+
+                window.addEventListener('resize', () => {
+            observer.disconnect(); // Stop observing
+            document.querySelectorAll('.menu-section').forEach(section => observer.observe(section));
+        });
+                function updateActiveTag() {
+            document.querySelectorAll('.menu-section').forEach(section => {
+                const rect = section.getBoundingClientRect();
+                if (rect.top >= 0 && rect.top <= window.innerHeight / 2) {
+                    document.querySelectorAll('.category-tag').forEach(tag => tag.classList.remove('active'));
+                    const activeTag = document.querySelector(`.category-tag[data-target="${section.id}"]`);
+                    if (activeTag) activeTag.classList.add('active');
+                }
+            });
+        }
+        window.addEventListener('scroll', updateActiveTag);
+        window.addEventListener('resize', updateActiveTag);
+
+
+
         // Handle sticky category slider and scroll-to-top button visibility
         window.addEventListener('scroll', () => {
           const heroHeight = document.querySelector('header').offsetHeight;
@@ -762,23 +792,26 @@
 
         // Intersection Observer for active category tag highlighting and auto-scroll in slider
         const sections = document.querySelectorAll('.menu-section');
-        const observerOptions = { threshold: 0.5 };
-
+        // const observerOptions = { threshold: 0.5 };
+        const observerOptions = { threshold: [0.25, 0.5, 0.75] }; // Try multiple thresholds
         const observer = new IntersectionObserver((entries) => {
           entries.forEach(entry => {
             if (entry.isIntersecting) {
               document.querySelectorAll('.category-tag').forEach(tag => tag.classList.remove('active'));
               const activeTag = document.querySelector(`.category-tag[data-target="${entry.target.id}"]`);
+
               if (activeTag) {
                 activeTag.classList.add('active');
-                // Auto-scroll the active tag into view in its container
-                activeTag.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                setTimeout(() => { // Delay to avoid sudden jumps
+                  activeTag.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }, 100);
               }
             }
           });
         }, observerOptions);
 
-        sections.forEach(section => observer.observe(section));
+        document.querySelectorAll('.menu-section').forEach(section => observer.observe(section));
+
     </script>
 </body>
 </html>

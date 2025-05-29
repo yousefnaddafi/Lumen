@@ -153,6 +153,7 @@
             transition: all 0.3s ease;
             scroll-behavior: smooth;
             display: flex;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1) !important;
         }
 
             .category-slider.sticky {
@@ -173,7 +174,7 @@
 
         .insta-button{
             border: black;
-            border-radius: 10px;
+            border-radius: 20px;
             padding: 10px 20px;
             font-size: 1em;
             font-weight: 800;
@@ -340,10 +341,10 @@
             <img src="img/MPLogo.png" alt="لوگوی لومِن" class="logo">
             @* <h1>قهوه لومِن</h1>
             <p class="tagline">جایی که هر جرعه، درخشش خاص خود را دارد</p> *@
-            <div class="insta-button" style="margin-top:30vh !important">
+            <a class="insta-button" style="margin-top:30vh !important" href="https://instagram.com">
                 <i class="fa-brands fa-instagram" style="font-size: x-large;vertical-align: top;"></i>
                 follow us 
-            </div>
+            </a>
             @* <button style="color: white;padding:5px;border-radius:5px;width:30%;background-color: #FFBE98;font-weight:bold;box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.1);">follow us</button> *@
         </div>
     </header>
@@ -755,7 +756,7 @@
     </div>
 
     <!-- Scroll-to-Top Button (up arrow icon only) -->
-    <button id="scrollToTop">&#8679;</button>
+    <button id="scrollToTop" style="background-color:#FFBE98"><img src="img/up.png" style="width:25px"></button>
 
     <!-- JavaScript for Sticky Slider, Active Tag Highlighting & Auto-Scroll, and Scroll-to-Top -->
     <script>

@@ -172,7 +172,7 @@
             gap: 10px;
         }
 
-        .insta-button{
+        .insta-button {
             border: black;
             border-radius: 10px;
             padding: 10px 20px;
@@ -187,11 +187,11 @@
 
         .category-tag {
             background-color: white;
-            border:black;
+            border: black;
             border-radius: 10px;
             padding: 10px 20px;
             font-size: 1em;
-            font-weight:800;
+            font-weight: 800;
             cursor: pointer;
             box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
             flex: 0 0 auto;
@@ -241,7 +241,7 @@
             box-shadow: none;
             background-size: cover;
             background-position: center;
-            margin-bottom:90px;
+            margin-bottom: 90px;
         }
 
             .menu-card img {
@@ -249,7 +249,7 @@
                 width: 86%;
                 height: auto;
                 margin-right: 7%;
-                aspect-ratio:6/3;
+                aspect-ratio: 6/3;
             }
 
         .menu-details {
@@ -269,13 +269,13 @@
             box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
             border-radius: 10px;
             background-color: white;
-            aspect-ratio :7/3;
+            aspect-ratio: 7/3;
             /* flex: 1;
-                    direction: rtl;
-                    text-align: right;
-                    img {
+                            direction: rtl;
+                            text-align: right;
+                            img {
 
-                    } */
+                            } */
         }
 
         .menu-item-title {
@@ -283,7 +283,7 @@
             font-size: 16px;
             color: black;
             margin-bottom: 8px;
-            font-weight:800;
+            font-weight: 800;
         }
 
         .menu-item-desc {
@@ -291,8 +291,8 @@
             color: #333;
             font-size: 11px;
             margin-bottom: 5px;
-            font-weight:100;
-            float:right;
+            font-weight: 100;
+            float: right;
         }
 
         .menu-item-price {
@@ -341,9 +341,9 @@
             <img src="img/MPLogo.png" alt="لوگوی لومِن" class="logo">
             @* <h1>قهوه لومِن</h1>
             <p class="tagline">جایی که هر جرعه، درخشش خاص خود را دارد</p> *@
-            <a class="insta-button" style="margin-top:30vh !important" href="https://instagram.com">
+            <a class="insta-button" style="margin-top:30vh !important" href="https://www.instagram.com/lumen.caferoastery?igsh=OW5vc3d6dHNoN3Ry">
                 <i class="fa-brands fa-instagram" style="font-size: x-large;vertical-align: top;"></i>
-                follow us 
+                follow us
             </a>
             @* <button style="color: white;padding:5px;border-radius:5px;width:30%;background-color: #FFBE98;font-weight:bold;box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.1);">follow us</button> *@
         </div>
@@ -352,408 +352,565 @@
     <!-- Category Slider -->
     <div class="category-slider" style="padding-top:24px;padding-bottom:24px;box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);" id="categorySlider">
         <div class="category-container">
-            <div class="category-tag" data-target="espresso">اسپرسو <img src="img/bread.png" style="width:25px"></div>
-            <div class="category-tag" data-target="americano">آمریکانو <img src="img/smoothie.png" style="width:25px"></div>
-            <div class="category-tag" data-target="latte">لاته <img src="img/hot-drink.png" style="width:25px"></div>
-            <div class="category-tag" data-target="cappuccino">کاپوچینو <img src="img/bread.png" style="width:25px"></div>
-            <div class="category-tag" data-target="mocha">موکا <img src="img/smoothie.png" style="width:25px"></div>
-            <div class="category-tag" data-target="coldbrew">کولد برو <img src="img/hot-drink.png" style="width:25px"></div>
-            <div class="category-tag" data-target="frappe">فراپه <img src="img/bread.png" style="width:25px"></div>
-            <div class="category-tag" data-target="specialty">ویژه <img src="img/smoothie.png" style="width:25px"></div>
+            <div class="category-tag" data-target="hotcoffee">قهوه گرم <img src="img/hotcoffee.png" style="width:25px;float:left"></div>
+            <div class="category-tag" data-target="coldcoffee">قهوه سرد <img src="img/icecoffee.png" style="width:25px;float:left"></div>
+            <div class="category-tag" data-target="brewcoffee">قهوه دمی <img src="img/brewcoffee.png" style="width:25px;float:left"></div>
+            <div class="category-tag" data-target="breakfast">صبحانه <img src="img/breakfast.png" style="width:25px;float:left"></div>
+            <div class="category-tag" data-target="snack">میان وعده <img src="img/snack.png" style="width:25px;float:left"></div>
+            <div class="category-tag" data-target="mocktail">ماکتل <img src="img/mocktail.png" style="width:25px;float:left"></div>
+            <div class="category-tag" data-target="hotdrink">نوشیدنی گرم <img src="img/hotdrink.png" style="width:25px;float:left"></div>
+            <div class="category-tag" data-target="shake">شیک <img src="img/shake.png" style="width:25px;float:left"></div>
+            <div class="category-tag" data-target="smoothie">اسموتی <img src="img/smoothie.png" style="width:25px;float:left"></div>
+            <div class="category-tag" data-target="tea">چای دمنوش <img src="img/tea.png" style="width:25px;float:left"></div>
         </div>
     </div>
 
     <!-- Menu Sections for each Category -->
     <div id="menu">
-        <!-- اسپرسو Section -->
-        <section id="espresso" class="menu-section">
+        <!-- قهوه گرم Section -->
+        <section id="hotcoffee" class="menu-section">
             <div class="menu-grid">
-                <!-- ۵ مورد برای اسپرسو -->
-                @* <div class="item-wrapper">
-                <div class="container">
-                    <img src="img/coffee.jpg" alt="Background" class="background-image">
-                    <div class="overlay-box">
-                        <div class="item-title">Premium Coffee Blend</div>
-                        <div class="item-description">Rich aroma with smooth texture, hand-picked Arabica beans.</div>
-                        <div class="item-price">$12.99</div>
-                    </div>
-                </div>
-                </div> *@
-
-
 
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">اسپرسو ۱</div>
+                        <div class="menu-item-title">اسپرسو</div>
                         <div class="menu-item-desc">طعم اسپرسوی خالص و قوی.</div>
-                        <div class="menu-item-price">۳.۰۰ تومان</div>
+                        <div class="menu-item-price">تجاری : 80 تومان</div>
+                        <div class="menu-item-price">تخصصی : 90 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="اسپرسو ۱" >
+                    <img src="img/coffee.jpg" alt="اسپرسو">
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">اسپرسو ۲</div>
+                        <div class="menu-item-title">اسپرسو کن پانا</div>
                         <div class="menu-item-desc">شات قدرتمند از اسپرسوی غنی.</div>
-                        <div class="menu-item-price">۳.۱۰ تومان</div>
+                        <div class="menu-item-price">تجاری : 98 تومان</div>
+                        <div class="menu-item-price">تخصصی : 109 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="اسپرسو ۲">
+                    <img src="img/coffee.jpg" alt="اسپرسو کن پانا">
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">اسپرسو ۳</div>
+                        <div class="menu-item-title">اسپرسو چاکلت</div>
                         <div class="menu-item-desc">تعادل عالی از قدرت و عطر.</div>
-                        <div class="menu-item-price">۳.۲۰ تومان</div>
+                        <div class="menu-item-price">تجاری : 95 تومان</div>
+                        <div class="menu-item-price">تخصصی : 105 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="اسپرسو ۳">
+                    <img src="img/coffee.jpg" alt="اسپرسو چاکلت">
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">اسپرسو ۴</div>
+                        <div class="menu-item-title">آمریکانو</div>
                         <div class="menu-item-desc">ملایم و غلیظ، مناسب دوستداران اصلی.</div>
-                        <div class="menu-item-price">۳.۳۰ تومان</div>
+                        <div class="menu-item-price">تجاری : 80 تومان</div>
+                        <div class="menu-item-price">تخصصی : 90 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="اسپرسو ۴">
+                    <img src="img/coffee.jpg" alt="آمریکانو">
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">اسپرسو ۵</div>
+                        <div class="menu-item-title">پیکولو</div>
                         <div class="menu-item-desc">طعم عمیق و غنی برای انرژی فوری.</div>
-                        <div class="menu-item-price">۳.۴۰ تومان</div>
+                        <div class="menu-item-price">تجاری : 98 تومان</div>
+                        <div class="menu-item-price">تخصصی : 108 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="اسپرسو ۵">
+                    <img src="img/coffee.jpg" alt="پیکولو">
+                </div>
+                <div class="menu-card  item-wrapper container">
+                    <div class="menu-details">
+                        <div class="menu-item-title">کاپوچینو</div>
+                        <div class="menu-item-desc">طعم عمیق و غنی برای انرژی فوری.</div>
+                        <div class="menu-item-price">تجاری : 103 تومان</div>
+                        <div class="menu-item-price">تخصصی : 113 تومان</div>
+                    </div>
+                    <img src="img/coffee.jpg" alt="کاپوچینو">
+                </div>
+                <div class="menu-card  item-wrapper container">
+                    <div class="menu-details">
+                        <div class="menu-item-title">لاته</div>
+                        <div class="menu-item-desc">طعم عمیق و غنی برای انرژی فوری.</div>
+                        <div class="menu-item-price">تجاری : 106 تومان</div>
+                        <div class="menu-item-price">تخصصی : 116 تومان</div>
+                    </div>
+                    <img src="img/coffee.jpg" alt="لاته">
+                </div>
+                <div class="menu-card  item-wrapper container">
+                    <div class="menu-details">
+                        <div class="menu-item-title">کارامل ماکیاتو</div>
+                        <div class="menu-item-desc">طعم عمیق و غنی برای انرژی فوری.</div>
+                        <div class="menu-item-price">تجاری : 112 تومان</div>
+                        <div class="menu-item-price">تخصصی : 122 تومان</div>
+                    </div>
+                    <img src="img/coffee.jpg" alt="کارامل ماکیاتو">
+                </div>
+                <div class="menu-card  item-wrapper container">
+                    <div class="menu-details">
+                        <div class="menu-item-title">موکا</div>
+                        <div class="menu-item-desc">طعم عمیق و غنی برای انرژی فوری.</div>
+                        <div class="menu-item-price">تجاری : 112 تومان</div>
+                        <div class="menu-item-price">تخصصی : 122 تومان</div>
+                    </div>
+                    <img src="img/coffee.jpg" alt="موکا">
+                </div>
+                <div class="menu-card  item-wrapper container">
+                    <div class="menu-details">
+                        <div class="menu-item-title">کوکو چوکو</div>
+                        <div class="menu-item-desc">طعم عمیق و غنی برای انرژی فوری.</div>
+                        <div class="menu-item-price">تجاری : 117 تومان</div>
+                        <div class="menu-item-price">تخصصی : 127 تومان</div>
+                    </div>
+                    <img src="img/coffee.jpg" alt="کوکو چوکو">
+                </div>
+                <div class="menu-card  item-wrapper container">
+                    <div class="menu-details">
+                        <div class="menu-item-title">سینمون دولچه لاته</div>
+                        <div class="menu-item-desc">طعم عمیق و غنی برای انرژی فوری.</div>
+                        <div class="menu-item-price">تجاری : 117 تومان</div>
+                        <div class="menu-item-price">تخصصی : 127 تومان</div>
+                    </div>
+                    <img src="img/coffee.jpg" alt="سینمون دولچه لاته">
                 </div>
             </div>
         </section>
 
-        <!-- آمریکانو Section -->
-        <section id="americano" class="menu-section">
+        <!-- قهوه سرد Section -->
+        <section id="coldcoffee" class="menu-section">
             <div class="menu-grid">
                 <!-- ۵ مورد برای آمریکانو -->
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">آمریکانو ۱</div>
+                        <div class="menu-item-title">آیس آمریکانو</div>
                         <div class="menu-item-desc">اسپرسو رقیق‌شده برای طعمی ملایم.</div>
-                        <div class="menu-item-price">۳.۵۰ تومان</div>
+                        <div class="menu-item-price">تجاری : 86 تومان</div>
+                        <div class="menu-item-price">تخصصی : 96 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="آمریکانو ۱">
+                    <img src="img/coffee.jpg" alt="آیس آمریکانو">
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">آمریکانو ۲</div>
+                        <div class="menu-item-title">آیس لاته</div>
                         <div class="menu-item-desc">گرم و دلنشین با طعمی آرام.</div>
-                        <div class="menu-item-price">۳.۶۰ تومان</div>
+                        <div class="menu-item-price">تجاری : 112 تومان</div>
+                        <div class="menu-item-price">تخصصی : 122 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="آمریکانو ۲">
+                    <img src="img/coffee.jpg" alt="آیس لاته">
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">آمریکانو ۳</div>
+                        <div class="menu-item-title">آیس کارامل ماکیاتو</div>
                         <div class="menu-item-desc">کلاسیک و دلپذیر، مناسب برای هر زمان.</div>
-                        <div class="menu-item-price">۳.۷۰ تومان</div>
+                        <div class="menu-item-price">تجاری : 118 تومان</div>
+                        <div class="menu-item-price">تخصصی : 128 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="آمریکانو ۳">
+                    <img src="img/coffee.jpg" alt="آیس کارامل ماکیاتو">
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">آمریکانو ۴</div>
+                        <div class="menu-item-title">آیس موکا</div>
                         <div class="menu-item-desc">ترکیب غنی با پس‌طعمی قوی.</div>
-                        <div class="menu-item-price">۳.۸۰ تومان</div>
+                        <div class="menu-item-price">تجاری : 118 تومان</div>
+                        <div class="menu-item-price">تخصصی : 128 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="آمریکانو ۴">
+                    <img src="img/coffee.jpg" alt="آیس موکا">
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">آمریکانو ۵</div>
+                        <div class="menu-item-title">آفوگاتو</div>
                         <div class="menu-item-desc">مقدمه‌ای ملایم برای اسپرسوی ما.</div>
-                        <div class="menu-item-price">۳.۹۰ تومان</div>
+                        <div class="menu-item-price">تجاری : 108 تومان</div>
+                        <div class="menu-item-price">تخصصی : 118 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="آمریکانو ۵">
+                    <img src="img/coffee.jpg" alt="آفوگاتو">
+                </div>
+                <div class="menu-card  item-wrapper container">
+                    <div class="menu-details">
+                        <div class="menu-item-title">اورنج کافی</div>
+                        <div class="menu-item-desc">مقدمه‌ای ملایم برای اسپرسوی ما.</div>
+                        <div class="menu-item-price">تجاری : 125 تومان</div>
+                        <div class="menu-item-price">تخصصی : 135 تومان</div>
+                    </div>
+                    <img src="img/coffee.jpg" alt="اورنج کافی">
+                </div>
+                <div class="menu-card  item-wrapper container">
+                    <div class="menu-details">
+                        <div class="menu-item-title">فراپاچینو اسپشیال</div>
+                        <div class="menu-item-desc">مقدمه‌ای ملایم برای اسپرسوی ما.</div>
+                        <div class="menu-item-price">تجاری : 149 تومان</div>
+                        <div class="menu-item-price">تخصصی : 159 تومان</div>
+                    </div>
+                    <img src="img/coffee.jpg" alt="فراپاچینو اسپشیال">
                 </div>
             </div>
         </section>
 
-        <!-- لاته Section -->
-        <section id="latte" class="menu-section">
+        <!-- قهوه دمی Section -->
+        <section id="brewcoffee" class="menu-section">
             <div class="menu-grid">
                 <!-- ۵ مورد برای لاته -->
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">لاته ۱</div>
+                        <div class="menu-item-title">فیلتر کافی</div>
                         <div class="menu-item-desc">شیر بخارپز شده با اسپرسوی کامل.</div>
-                        <div class="menu-item-price">۴.۰۰ تومان</div>
+                        <div class="menu-item-price">تخصصی : 85 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="لاته ۱">
+                    <img src="img/coffee.jpg" alt="فیلتر کافی">
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">لاته ۲</div>
+                        <div class="menu-item-title">ترک</div>
                         <div class="menu-item-desc">ملایم، لطیف و دلنشین.</div>
-                        <div class="menu-item-price">۴.۱۰ تومان</div>
+                        <div class="menu-item-price">تخصصی : 68 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="لاته ۲">
+                    <img src="img/coffee.jpg" alt="ترک">
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">لاته ۳</div>
+                        <div class="menu-item-title">کلد برو</div>
                         <div class="menu-item-desc">ترکیب هماهنگ اسپرسو و شیر بخارپز.</div>
-                        <div class="menu-item-price">۴.۲۰ تومان</div>
+                        <div class="menu-item-price">تخصصی : 120 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="لاته ۳">
+                    <img src="img/coffee.jpg" alt="کلد برو">
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">لاته ۴</div>
+                        <div class="menu-item-title">V60</div>
                         <div class="menu-item-desc">بافت مخملینی با طعمی غنی.</div>
-                        <div class="menu-item-price">۴.۳۰ تومان</div>
+                        <div class="menu-item-price">تخصصی : 180 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="لاته ۴">
-                </div>
-                <div class="menu-card  item-wrapper container">
-                    <div class="menu-details">
-                        <div class="menu-item-title">لاته ۵</div>
-                        <div class="menu-item-desc">یک لیوان کلاسیک از دلپذیری و گرما.</div>
-                        <div class="menu-item-price">۴.۴۰ تومان</div>
-                    </div>
-                    <img src="img/coffee.jpg" alt="لاته ۵">
+                    <img src="img/coffee.jpg" alt="V60">
                 </div>
             </div>
         </section>
 
-        <!-- کاپوچینو Section -->
-        <section id="cappuccino" class="menu-section">
+        <!-- صبحانه Section -->
+        <section id="breakfast" class="menu-section">
             <div class="menu-grid">
                 <!-- ۵ مورد برای کاپوچینو -->
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">کاپوچینو ۱</div>
+                        <div class="menu-item-title">املت گودا</div>
                         <div class="menu-item-desc">ترکیبی متعادل از شیر بخارپز و اسپرسو.</div>
-                        <div class="menu-item-price">۴.۵۰ تومان</div>
+                        <div class="menu-item-price">135 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="کاپوچینو ۱">
+                    <img src="img/coffee.jpg" alt="املت گودا">
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">کاپوچینو ۲</div>
+                        <div class="menu-item-title">بیکن تخم مرغ</div>
                         <div class="menu-item-desc">ترکیب دلپذیر از اسپرسو غنی و کف سبک.</div>
-                        <div class="menu-item-price">۴.۶۰ تومان</div>
+                        <div class="menu-item-price">180 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="کاپوچینو ۲">
+                    <img src="img/coffee.jpg" alt="بیکن تخم مرغ">
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">کاپوچینو ۳</div>
+                        <div class="menu-item-title">سیمیت</div>
                         <div class="menu-item-desc">سبک، کف‌دار و پر از شخصیت.</div>
-                        <div class="menu-item-price">۴.۷۰ تومان</div>
+                        <div class="menu-item-price">110 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="کاپوچینو ۳">
+                    <img src="img/coffee.jpg" alt="سیمیت">
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">کاپوچینو ۴</div>
+                        <div class="menu-item-title">گرانولا</div>
                         <div class="menu-item-desc">یک لذت کلاسیک با نت‌های غنی اسپرسو.</div>
-                        <div class="menu-item-price">۴.۸۰ تومان</div>
+                        <div class="menu-item-price">165 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="کاپوچینو ۴">
-                </div>
-                <div class="menu-card  item-wrapper container">
-                    <div class="menu-details">
-                        <div class="menu-item-title">کاپوچینو ۵</div>
-                        <div class="menu-item-desc">صاف، کرمی و معطر.</div>
-                        <div class="menu-item-price">۴.۹۰ تومان</div>
-                    </div>
-                    <img src="img/coffee.jpg" alt="کاپوچینو ۵">
+                    <img src="img/coffee.jpg" alt="گرانولا">
                 </div>
             </div>
         </section>
 
-        <!-- موکا Section -->
-        <section id="mocha" class="menu-section">
+        <!-- میان وعده Section -->
+        <section id="snack" class="menu-section">
             <div class="menu-grid">
                 <!-- ۵ مورد برای موکا -->
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">موکا ۱</div>
+                        <div class="menu-item-title">پنینی مرغ و خردل</div>
                         <div class="menu-item-desc">ترکیب بی‌نظیر شکلات و اسپرسو.</div>
-                        <div class="menu-item-price">۵.۰۰ تومان</div>
+                        <div class="menu-item-price">210 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="موکا ۱">
+                    <img src="img/coffee.jpg" alt="پنینی مرغ و خردل">
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">موکا ۲</div>
+                        <div class="menu-item-title">پنینی وجی اسموکی</div>
                         <div class="menu-item-desc">طعم موکای غنی با پایان مخملین.</div>
-                        <div class="menu-item-price">۵.۱۰ تومان</div>
+                        <div class="menu-item-price">180 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="موکا ۲">
+                    <img src="img/coffee.jpg" alt="پنینی وجی اسموکی">
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">موکا ۳</div>
+                        <div class="menu-item-title">پنینی بوقلمون پستو</div>
                         <div class="menu-item-desc">یک خوراک دکادنت و لذیذ شکلاتی.</div>
-                        <div class="menu-item-price">۵.۲۰ تومان</div>
+                        <div class="menu-item-price">195 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="موکا ۳">
+                    <img src="img/coffee.jpg" alt="پنینی بوقلمون پستو">
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">موکا ۴</div>
+                        <div class="menu-item-title">رپ مرغ و سبزیجات</div>
                         <div class="menu-item-desc">طعم قوی و صاف که رضایت‌بخش است.</div>
-                        <div class="menu-item-price">۵.۳۰ تومان</div>
+                        <div class="menu-item-price">135 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="موکا ۴">
+                    <img src="img/coffee.jpg" alt="رپ مرغ و سبزیجات">
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">موکا ۵</div>
+                        <div class="menu-item-title">رپ ژامبون با سس دست ساز</div>
                         <div class="menu-item-desc">ترکیبی مغرور از خامه و قهوه.</div>
-                        <div class="menu-item-price">۵.۴۰ تومان</div>
+                        <div class="menu-item-price">115 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="موکا ۵">
+                    <img src="img/coffee.jpg" alt="رپ ژامبون با سس دست ساز">
                 </div>
             </div>
         </section>
 
-        <!-- کولد برو Section -->
-        <section id="coldbrew" class="menu-section">
+        <!-- ماکتل Section -->
+        <section id="mocktail" class="menu-section">
             <div class="menu-grid">
                 <!-- ۵ مورد برای کولد برو -->
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">کولد برو ۱</div>
+                        <div class="menu-item-title">جینجر لیموناد</div>
                         <div class="menu-item-desc">خونسرد شده برای طعمی ترد و تازه.</div>
-                        <div class="menu-item-price">۴.۵۰ تومان</div>
+                        <div class="menu-item-price">90 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="کولد برو ۱">
+                    <img src="img/coffee.jpg" alt="جینجر لیموناد">
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">کولد برو ۲</div>
+                        <div class="menu-item-title">اسپشیال پیچ</div>
                         <div class="menu-item-desc">ملایم و آرامبخش برای روزهای گرم.</div>
-                        <div class="menu-item-price">۴.۶۰ تومان</div>
+                        <div class="menu-item-price">155 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="کولد برو ۲">
+                    <img src="img/coffee.jpg" alt="اسپشیال پیچ">
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">کולד برو ۳</div>
+                        <div class="menu-item-title">بلو راش</div>
                         <div class="menu-item-desc">طعم ملایم و خنک برای انرژی تازه.</div>
-                        <div class="menu-item-price">۴.۷۰ تومان</div>
+                        <div class="menu-item-price">165 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="کولد برو ۳">
+                    <img src="img/coffee.jpg" alt="بلو راش">
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">کولد برو ۴</div>
+                        <div class="menu-item-title">دتاکس واتر</div>
                         <div class="menu-item-desc">ترکیبی جسورانه برای یک شروع مدرن.</div>
-                        <div class="menu-item-price">۴.۸۰ تومان</div>
+                        <div class="menu-item-price">90 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="کولد برو ۴">
-                </div>
-                <div class="menu-card  item-wrapper container">
-                    <div class="menu-details">
-                        <div class="menu-item-title">کولد برو ۵</div>
-                        <div class="menu-item-desc">تازه و احیا کننده در هر جرعه.</div>
-                        <div class="menu-item-price">۴.۹۰ تومان</div>
-                    </div>
-                    <img src="img/coffee.jpg" alt="کولد برو ۵">
+                    <img src="img/coffee.jpg" alt="دتاکس واتر">
                 </div>
             </div>
         </section>
 
-        <!-- فراپه Section -->
-        <section id="frappe" class="menu-section">
+        <!-- نوشیدنی گرم Section -->
+        <section id="hotdrink" class="menu-section">
             <div class="menu-grid">
                 <!-- ۵ مورد برای فراپه -->
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">فراپه ۱</div>
+                        <div class="menu-item-title">شیرین ثعلب</div>
                         <div class="menu-item-desc">قهوه یخ زده مخلوط با کمی خامه.</div>
-                        <div class="menu-item-price">۵.۰۰ تومان</div>
+                        <div class="menu-item-price">89 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="فراپه ۱">
+                    <img src="img/coffee.jpg" alt="شیرین ثعلب">
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">فراپه ۲</div>
+                        <div class="menu-item-title">شیر پسته زعفران</div>
                         <div class="menu-item-desc">یخ زده، خامه‌ای و بی نهایت دلچسب.</div>
-                        <div class="menu-item-price">۵.۱۰ تومان</div>
+                        <div class="menu-item-price">99 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="فراپه ۲">
+                    <img src="img/coffee.jpg" alt="شیر پسته زعفران">
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">فراپه ۳</div>
+                        <div class="menu-item-title">هات چاکلت</div>
                         <div class="menu-item-desc">مخلوطی دلنشین از قهوه و حس تابستانی.</div>
-                        <div class="menu-item-price">۵.۲۰ تومان</div>
+                        <div class="menu-item-price">95 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="فراپه ۳">
+                    <img src="img/coffee.jpg" alt="هات چاکلت">
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">فراپه ۴</div>
+                        <div class="menu-item-title">وایت چاکلت</div>
                         <div class="menu-item-desc">صاف، خنک و کاملاً روح‌بخش.</div>
-                        <div class="menu-item-price">۵.۳۰ تومان</div>
+                        <div class="menu-item-price">95 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="فراپه ۴">
+                    <img src="img/coffee.jpg" alt="وایت چاکلت">
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">فراپه ۵</div>
+                        <div class="menu-item-title">لومن چاکلت</div>
                         <div class="menu-item-desc">نمونه‌ای عالی برای یک بعدازظهر آفتابی.</div>
-                        <div class="menu-item-price">۵.۴۰ تومان</div>
+                        <div class="menu-item-price">105 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="فراپه ۵">
+                    <img src="img/coffee.jpg" alt="لومن چاکلت">
+                </div>
+                <div class="menu-card  item-wrapper container">
+                    <div class="menu-details">
+                        <div class="menu-item-title">ماسالا</div>
+                        <div class="menu-item-desc">نمونه‌ای عالی برای یک بعدازظهر آفتابی.</div>
+                        <div class="menu-item-price">95 تومان</div>
+                    </div>
+                    <img src="img/coffee.jpg" alt="ماسالا">
+                </div>
+                <div class="menu-card  item-wrapper container">
+                    <div class="menu-details">
+                        <div class="menu-item-title">چای لته</div>
+                        <div class="menu-item-desc">نمونه‌ای عالی برای یک بعدازظهر آفتابی.</div>
+                        <div class="menu-item-price">89 تومان</div>
+                    </div>
+                    <img src="img/coffee.jpg" alt="چای لته">
+                </div>
+                <div class="menu-card  item-wrapper container">
+                    <div class="menu-details">
+                        <div class="menu-item-title">ماچا لته</div>
+                        <div class="menu-item-desc">نمونه‌ای عالی برای یک بعدازظهر آفتابی.</div>
+                        <div class="menu-item-price">120 تومان</div>
+                    </div>
+                    <img src="img/coffee.jpg" alt="ماچا لته">
                 </div>
             </div>
         </section>
 
-        <!-- ویژه Section -->
-        <section id="specialty" class="menu-section">
+        <!-- شیک Section -->
+        <section id="shake" class="menu-section">
             <div class="menu-grid">
                 <!-- ۵ مورد برای ویژه -->
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">ویژه ۱</div>
+                        <div class="menu-item-title">دبی چاکلت</div>
                         <div class="menu-item-desc">ترکیبی منحصر به فرد برای شما.</div>
-                        <div class="menu-item-price">۶.۰۰ تومان</div>
+                        <div class="menu-item-price">176 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="ویژه ۱">
+                    <img src="img/coffee.jpg" alt="دبی چاکلت">
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">ویژه ۲</div>
+                        <div class="menu-item-title">پرو شیک</div>
                         <div class="menu-item-desc">طعم‌های غنی و پیچیده با نوآوری‌های جدید.</div>
-                        <div class="menu-item-price">۶.۱۰ تومان</div>
+                        <div class="menu-item-price">176 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="ویژه ۲">
+                    <img src="img/coffee.jpg" alt="پرو شیک">
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">ویژه ۳</div>
+                        <div class="menu-item-title">اسنیکرز</div>
                         <div class="menu-item-desc">با علاقه و خلاقیت منحصر به فرد تهیه شده است.</div>
-                        <div class="menu-item-price">۶.۲۰ تومان</div>
+                        <div class="menu-item-price">164 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="ویژه ۳">
+                    <img src="img/coffee.jpg" alt="اسنیکرز">
                 </div>
                 <div class="menu-card  item-wrapper container">
                     <div class="menu-details">
-                        <div class="menu-item-title">ویژه ۴</div>
+                        <div class="menu-item-title">بری بوست</div>
                         <div class="menu-item-desc">یک تغییر متفاوت در طعم‌های کلاسیک.</div>
-                        <div class="menu-item-price">۶.۳۰ تومان</div>
+                        <div class="menu-item-price">164 تومان</div>
                     </div>
-                    <img src="img/coffee.jpg" alt="ویژه ۴">
-                </div>
-                <div class="menu-card  item-wrapper container">
-                    <div class="menu-details">
-                        <div class="menu-item-title">ویژه ۵</div>
-                        <div class="menu-item-desc">مخصوص عاشقان طعم‌های خارق‌العاده.</div>
-                        <div class="menu-item-price">۶.۴۰ تومان</div>
-                    </div>
-                    <img src="img/coffee.jpg" alt="ویژه ۵">
+                    <img src="img/coffee.jpg" alt="بری بوست">
                 </div>
             </div>
         </section>
+        <!-- اسموتی Section -->
+        <section id="smoothie" class="menu-section">
+            <div class="menu-grid">
+                <!-- ۵ مورد برای ویژه -->
+                <div class="menu-card  item-wrapper container">
+                    <div class="menu-details">
+                        <div class="menu-item-title">فرش پاپ</div>
+                        <div class="menu-item-desc">ترکیبی منحصر به فرد برای شما.</div>
+                        <div class="menu-item-price">150 تومان</div>
+                    </div>
+                    <img src="img/coffee.jpg" alt="فرش پاپ">
+                </div>
+                <div class="menu-card  item-wrapper container">
+                    <div class="menu-details">
+                        <div class="menu-item-title">سان بری</div>
+                        <div class="menu-item-desc">طعم‌های غنی و پیچیده با نوآوری‌های جدید.</div>
+                        <div class="menu-item-price">170 تومان</div>
+                    </div>
+                    <img src="img/coffee.jpg" alt="سان بری">
+                </div>
+                <div class="menu-card  item-wrapper container">
+                    <div class="menu-details">
+                        <div class="menu-item-title">بری وایب</div>
+                        <div class="menu-item-desc">با علاقه و خلاقیت منحصر به فرد تهیه شده است.</div>
+                        <div class="menu-item-price">210 تومان</div>
+                    </div>
+                    <img src="img/coffee.jpg" alt="بری وایب">
+                </div>
+            </div>
+        </section>
+
+        <!-- چای دمنوش Section -->
+        <section id="tea" class="menu-section">
+            <div class="menu-grid">
+                <!-- ۵ مورد برای ویژه -->
+                <div class="menu-card  item-wrapper container">
+                    <div class="menu-details">
+                        <div class="menu-item-title">چای کوکی</div>
+                        <div class="menu-item-desc">ترکیبی منحصر به فرد برای شما.</div>
+                        <div class="menu-item-price">75 تومان</div>
+                    </div>
+                    <img src="img/coffee.jpg" alt="چای کوکی">
+                </div>
+                <div class="menu-card  item-wrapper container">
+                    <div class="menu-details">
+                        <div class="menu-item-title">چای سبز</div>
+                        <div class="menu-item-desc">طعم‌های غنی و پیچیده با نوآوری‌های جدید.</div>
+                        <div class="menu-item-price">80 تومان</div>
+                    </div>
+                    <img src="img/coffee.jpg" alt="چای سبز">
+                </div>
+                <div class="menu-card  item-wrapper container">
+                    <div class="menu-details">
+                        <div class="menu-item-title">چای وانیل</div>
+                        <div class="menu-item-desc">با علاقه و خلاقیت منحصر به فرد تهیه شده است.</div>
+                        <div class="menu-item-price">95 تومان</div>
+                    </div>
+                    <img src="img/coffee.jpg" alt="چای وانیل">
+                </div>
+                <div class="menu-card  item-wrapper container">
+                    <div class="menu-details">
+                        <div class="menu-item-title">چای آرامش</div>
+                        <div class="menu-item-desc">یک تغییر متفاوت در طعم‌های کلاسیک.</div>
+                        <div class="menu-item-price">95 تومان</div>
+                    </div>
+                    <img src="img/coffee.jpg" alt="چای آرامش">
+                </div>
+                <div class="menu-card  item-wrapper container">
+                    <div class="menu-details">
+                        <div class="menu-item-title">دمنوش لومن</div>
+                        <div class="menu-item-desc">مخصوص عاشقان طعم‌های خارق‌العاده.</div>
+                        <div class="menu-item-price">110 تومان</div>
+                    </div>
+                    <img src="img/coffee.jpg" alt="دمنوش لومن">
+                </div>
+            </div>
+        </section>
+
     </div>
+    <!-- Footer -->
+    <footer style="background-color:#FFBE98;color:white">
+        <div style="text-align:right">
+            <p style="float:right;padding-right:10px;width:100%"><img src="img/location.png" style="width:20px"> آدرس : بلوار فردوس شرق, خیابان ابراهیمی, کوچه پنجم </p>
+                <a href="tel:09126023218" style="float:right;padding:10px;width:100%">
+                    <img src="img/phonecall.png" style="width:20px"> 09126023218
+                </a>
+            <br />
+            <p style="float:right;padding:10px;width:100%"><img src="img/clock.png" style="width:20px"> 6 صبح الی 24 </p>
+        </div>
+        <br />
+        <div>
+            &copy; ۲۰۲۵ قهوه لومِن. کلیه حقوق محفوظ است.
+        </div>
+
+    </footer>
 
     <!-- Scroll-to-Top Button (up arrow icon only) -->
     <button id="scrollToTop" style="background-color:#FFBE98"><img src="img/up.png" style="width:25px"></button>

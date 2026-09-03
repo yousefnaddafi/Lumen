@@ -1,0 +1,14 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "Lumen": "Password=LumenCafe2026;TrustServerCertificate=True;Persist Security Info=True;User ID=Lumen2026;Initial Catalog=Lumen;Data Source=."
+    //"Lumen": "Password=LumenCafe2026;TrustServerCertificate=True;Persist Security Info=True;User ID=Lumen2026;Initial Catalog=Lumen;Data Source=188.212.99.27,1433"
+
+  }
+}

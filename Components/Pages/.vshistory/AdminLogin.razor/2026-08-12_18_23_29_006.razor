@@ -1,0 +1,60 @@
+﻿@page "/admin/login"
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Components.Authorization
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthProvider
+
+<div class="admin-login-container">
+    <div class="glass-card login-card">
+        <div class="login-header">
+            <h1>☕ لومن | پنل مدیریت</h1>
+            <p>به پنل مدیریت منوی کافه لومن خوش آمدید</p>
+        </div>
+
+        <EditForm Model="@loginModel" OnValidSubmit="@HandleLogin">
+            <div class="form-group">
+                <label>نام کاربری</label>
+                <InputText @bind-Value="loginModel.Username" class="glass-input" placeholder="نام کاربری خود را وارد کنید" />
+                <ValidationMessage For="@(() => loginModel.Username)" />
+            </div>
+
+            <div class="form-group">
+                <label>رمز عبور</label>
+                <InputText @bind-Value="loginModel.Password" type="password" class="glass-input" placeholder="رمز عبور خود را وارد کنید" />
+                <ValidationMessage For="@(() => loginModel.Password)" />
+            </div>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="error-message">@errorMessage</div>
+            }
+
+            <button type="submit" class="btn-glass-primary">ورود به پنل مدیریت</button>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private LoginModel loginModel = new();
+    private string errorMessage = "";
+
+    private async Task HandleLogin()
+    {
+        // Simple authentication - in production, use proper authentication
+        if (loginModel.Username == "admin" && loginModel.Password == "LumenCafe2026")
+        {
+            NavigationManager.NavigateTo("/admin/dashboard");
+        }
+        else
+        {
+            errorMessage = "نام کاربری یا رمز عبور اشتباه است";
+        }
+    }
+
+    public class LoginModel
+    {
+        public string Username { get; set; }
+        public string Password { get; set; }
+    }
+}

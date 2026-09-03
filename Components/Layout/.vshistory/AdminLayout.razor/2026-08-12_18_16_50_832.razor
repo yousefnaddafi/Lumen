@@ -1,0 +1,36 @@
+﻿@layout AdminLayout
+@inject NavigationManager NavigationManager
+
+<div class="admin-container">
+    <nav class="admin-nav glass-nav">
+        <div class="nav-brand">
+            <span class="brand-icon">☕</span>
+            <span class="brand-text">Lumen Admin</span>
+        </div>
+        <div class="nav-links">
+            <NavLink href="/admin/dashboard" class="nav-link" Match="NavLinkMatch.Prefix">
+                <span>📊</span> Dashboard
+            </NavLink>
+            <NavLink href="/admin/products" class="nav-link">
+                <span>🍽️</span> Products
+            </NavLink>
+            <NavLink href="/admin/categories" class="nav-link">
+                <span>📂</span> Categories
+            </NavLink>
+            <button class="nav-link logout-btn" @onclick="Logout">
+                <span>🚪</span> Logout
+            </button>
+        </div>
+    </nav>
+
+    <div class="admin-content">
+        @Body
+    </div>
+</div>
+
+@code {
+    private void Logout()
+    {
+        NavigationManager.NavigateTo("/admin/login");
+    }
+}

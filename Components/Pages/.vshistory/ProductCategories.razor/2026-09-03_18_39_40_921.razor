@@ -1,0 +1,118 @@
+﻿@page "/admin/categories"
+@using Lumen.Models
+@using Lumen.Services.ProductCatgoryServices
+@using Lumen.Services.ProductServices
+@layout Components.Layout.AdminLayout
+@inject HttpClient Http
+@inject IProductCategoryService CategoryService
+@inject IProductService ProductService
+
+<div class="page-header">
+    <h2>📂 مدیریت دسته‌بندی‌ها</h2>
+    <button class="btn-glass-primary" @onclick="OpenCreateModal">+ افزودن دسته‌بندی جدید</button>
+</div>
+
+<div class="categories-grid">
+    @foreach (var category in categories)
+    {
+        <div class="category-card glass-card">
+            <div class="category-info">
+                <h3>@category.Title</h3>
+                <span class="badge">@GetProductCount(category.ProductCategoryId) محصول</span>
+            </div>
+            <div class="category-actions">
+                <button class="btn-glass-secondary" @onclick="() => EditCategory(category)">✏️ ویرایش</button>
+                <button class="btn-glass-danger" @onclick="() => DeleteCategory(category)">🗑️ حذف</button>
+            </div>
+        </div>
+    }
+</div>
+
+@if (showModal)
+{
+    <div class="modal-overlay" @onclick="CloseModal">
+        <div class="modal-content glass-card" @onclick:stopPropagation>
+            <div class="modal-header">
+                <h3>@(isEditing ? "ویرایش دسته‌بندی" : "افزودن دسته‌بندی جدید")</h3>
+                <button class="close-btn" @onclick="CloseModal">✕</button>
+            </div>
+            <EditForm Model="@currentCategory" OnValidSubmit="@SaveCategory">
+                <div class="form-group">
+                    <label>نام دسته‌بندی *</label>
+                    <InputText @bind-Value="currentCategory.Title" class="glass-input" placeholder="نام دسته‌بندی را وارد کنید" />
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-glass-secondary" @onclick="CloseModal">انصراف</button>
+                    <button type="submit" class="btn-glass-primary">@(isEditing ? "به‌روزرسانی" : "افزودن")</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    private List<ProductCategory> categories = new();
+    private bool showModal = false;
+    private bool isEditing = false;
+    private ProductCategory currentCategory = new();
+    private Dictionary<long, int> productCounts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        categories = CategoryService.GetAll(0,0,null) ?? new List<ProductCategory>();
+        var products = ProductService.GetAll(null,null) ?? new List<Product>();
+        productCounts = products.GroupBy(p => p.ProductCategoryId)
+                               .ToDictionary(g => g.Key, g => g.Count());
+    }
+
+    private int GetProductCount(long categoryId) =>
+        productCounts.TryGetValue(categoryId, out var count) ? count : 0;
+
+    private void OpenCreateModal()
+    {
+        currentCategory = new ProductCategory();
+        isEditing = false;
+        showModal = true;
+    }
+
+    private void EditCategory(ProductCategory category)
+    {
+        currentCategory = category;
+        isEditing = true;
+        showModal = true;
+    }
+
+    private async Task SaveCategory()
+    {
+        if (isEditing)
+        {
+            await Http.PutAsJsonAsync($"/api/categories/{currentCategory.ProductCategoryId}", currentCategory);
+        }
+        else
+        {
+            await Http.PostAsJsonAsync("/api/categories", currentCategory);
+        }
+        await LoadData();
+        CloseModal();
+    }
+
+    private async Task DeleteCategory(ProductCategory category)
+    {
+        // if (await ConfirmDelete())
+        // {
+        //     await Http.DeleteAsync($"/api/categories/{category.ProductCategoryId}");
+        //     await LoadData();
+        // }
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        currentCategory = new ProductCategory();
+    }
+}

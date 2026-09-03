@@ -1,0 +1,192 @@
+﻿@page "/admin/products"
+@layout AdminLayout
+@using Lumen.Components.Layout
+@using Lumen.Models
+@inject NavigationManager NavigationManager
+@inject HttpClient Http
+
+<div class="page-header">
+    <h2>🍽️ Manage Products</h2>
+    <button class="btn-glass-primary" @onclick="OpenCreateModal">+ Add New Product</button>
+</div>
+
+<div class="search-bar glass-card">
+    <input type="text" @bind="searchTerm" placeholder="Search products..." class="glass-input" />
+    <select @bind="selectedCategory" class="glass-select">
+        <option value="">All Categories</option>
+        @foreach (var cat in categories)
+        {
+            <option value="@cat.ProductCategoryId">@cat.Title</option>
+        }
+    </select>
+</div>
+
+<div class="products-grid">
+    @foreach (var product in filteredProducts)
+    {
+        <div class="product-card glass-card">
+            <div class="product-image-container">
+                @if (!string.IsNullOrEmpty(product.Image))
+                {
+                    <img src="@product.Image" alt="@product.Title" class="product-image" />
+                }
+                else
+                {
+                    <div class="no-image">No Image</div>
+                }
+            </div>
+            <div class="product-info">
+                <h3>@product.Title</h3>
+                <p class="category">@product.CategoryName</p>
+                <p class="price">€@(product.EcoPrice / 100.0)</p>
+                @if (product.BusinessPrice.HasValue)
+                {
+                    <p class="business-price">Business: €@(product.BusinessPrice.Value / 100.0)</p>
+                }
+                <div class="product-actions">
+                    <button class="btn-glass-secondary" @onclick="() => EditProduct(product)">✏️ Edit</button>
+                    <button class="btn-glass-danger" @onclick="() => DeleteProduct(product)">🗑️ Delete</button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@if (showModal)
+{
+    <div class="modal-overlay" @onclick="CloseModal">
+        <div class="modal-content glass-card" @onclick:stopPropagation>
+            <div class="modal-header">
+                <h3>@(isEditing ? "Edit Product" : "Add New Product")</h3>
+                <button class="close-btn" @onclick="CloseModal">✕</button>
+            </div>
+            <EditForm Model="@currentProduct" OnValidSubmit="@SaveProduct">
+                <div class="form-group">
+                    <label>Title *</label>
+                    <InputText @bind-Value="currentProduct.Title" class="glass-input" />
+                </div>
+
+                <div class="form-group">
+                    <label>Category *</label>
+                    <InputSelect @bind-Value="currentProduct.ProductCategoryId" class="glass-select">
+                        <option value="">Select Category</option>
+                        @foreach (var cat in categories)
+                        {
+                            <option value="@cat.ProductCategoryId">@cat.Title</option>
+                        }
+                    </InputSelect>
+                </div>
+
+                <div class="form-group">
+                    <label>Eco Price (in cents) *</label>
+                    <InputNumber @bind-Value="currentProduct.EcoPrice" class="glass-input" />
+                </div>
+
+                <div class="form-group">
+                    <label>Business Price (in cents)</label>
+                    <InputNumber @bind-Value="currentProduct.BusinessPrice" class="glass-input" />
+                </div>
+
+                <div class="form-group">
+                    <label>Description</label>
+                    <InputTextArea @bind-Value="currentProduct.Description" class="glass-input" rows="3" />
+                </div>
+
+                <div class="form-group">
+                    <label>Image URL</label>
+                    <InputText @bind-Value="currentProduct.Image" class="glass-input" placeholder="https://example.com/image.jpg" />
+                </div>
+
+                <div class="form-group checkbox">
+                    <InputCheckbox @bind-Value="currentProduct.IsAvailable" />
+                    <label>Available</label>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-glass-secondary" @onclick="CloseModal">Cancel</button>
+                    <button type="submit" class="btn-glass-primary">@(isEditing ? "Update" : "Create")</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Product> products = new();
+    private List<ProductCategory> categories = new();
+    private string searchTerm = "";
+    private long? selectedCategory = null;
+    private bool showModal = false;
+    private bool isEditing = false;
+    private Product currentProduct = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        // In production, replace with actual API calls
+        var productsResponse = await Http.GetFromJsonAsync<List<Product>>("/api/products");
+        var categoriesResponse = await Http.GetFromJsonAsync<List<ProductCategory>>("/api/categories");
+
+        products = productsResponse ?? new List<Product>();
+        categories = categoriesResponse ?? new List<ProductCategory>();
+    }
+
+    private List<Product> filteredProducts => products
+        .Where(p => string.IsNullOrEmpty(searchTerm) ||
+                   p.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+        .Where(p => !selectedCategory.HasValue || p.ProductCategoryId == selectedCategory.Value)
+        .ToList();
+
+    private void OpenCreateModal()
+    {
+        currentProduct = new Product { CreateDate = DateTime.Now, IsAvailable = true };
+        isEditing = false;
+        showModal = true;
+    }
+
+    private void EditProduct(Product product)
+    {
+        currentProduct = product;
+        isEditing = true;
+        showModal = true;
+    }
+
+    private async Task SaveProduct()
+    {
+        if (isEditing)
+        {
+            await Http.PutAsJsonAsync($"/api/products/{currentProduct.ProductId}", currentProduct);
+        }
+        else
+        {
+            await Http.PostAsJsonAsync("/api/products", currentProduct);
+        }
+        await LoadData();
+        CloseModal();
+    }
+
+    private async Task DeleteProduct(Product product)
+    {
+        if (await ConfirmDelete())
+        {
+            await Http.DeleteAsync($"/api/products/{product.ProductId}");
+            await LoadData();
+        }
+    }
+
+    private async Task<bool> ConfirmDelete()
+    {
+        // Implement confirmation dialog
+        return true;
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        currentProduct = new Product();
+    }
+}

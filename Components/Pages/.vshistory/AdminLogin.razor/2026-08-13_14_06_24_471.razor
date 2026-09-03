@@ -1,0 +1,57 @@
+﻿@page "/admin/login"
+@rendermode InteractiveServer
+@inject NavigationManager NavigationManager
+
+<div class="admin-login-container">
+    <div class="glass-card login-card">
+        <div class="login-header">
+            <h1>☕ لومن | پنل مدیریت</h1>
+            <p>به پنل مدیریت منوی کافه لومن خوش آمدید</p>
+        </div>
+
+        <EditForm Model="@loginModel" OnValidSubmit="@HandleLogin" FormName="loginForm">
+            <div class="form-group">
+                <label>نام کاربری</label>
+                <InputText @bind-Value="loginModel.Username" class="glass-input" placeholder="نام کاربری خود را وارد کنید" />
+                <ValidationMessage For="@(() => loginModel.Username)" />
+            </div>
+
+            <div class="form-group">
+                <label>رمز عبور</label>
+                <InputText @bind-Value="loginModel.Password" type="password" class="glass-input" placeholder="رمز عبور خود را وارد کنید" />
+                <ValidationMessage For="@(() => loginModel.Password)" />
+            </div>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="error-message">@errorMessage</div>
+            }
+
+            <button type="submit" class="btn-glass-primary">ورود به پنل مدیریت</button>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private LoginModel loginModel = new();
+    private string errorMessage = "";
+
+    private void HandleLogin()
+    {
+        if (loginModel.Username == "admin" && loginModel.Password == "LumenCafe2026")
+        {
+            NavigationManager.NavigateTo("/admin/products");
+        }
+        else
+        {
+            errorMessage = "نام کاربری یا رمز عبور اشتباه است";
+            loginModel.Password = ""; // Clear password for security
+        }
+    }
+
+    public class LoginModel
+    {
+        public string? Username { get; set; }
+        public string? Password { get; set; }
+    }
+}

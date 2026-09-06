@@ -1,0 +1,48 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+
+@using MudBlazor
+<MudRTLProvider RightToLeft=true>
+    <MudThemeProvider />
+    <MudDialogProvider />
+    <MudSnackbarProvider />
+
+    <div class="d-flex" style="min-height: 100vh;">
+        <!-- Navigation Sidebar -->
+        <div class="glass-nav" style="width: 280px; min-height: 100vh; padding: 20px 0;">
+            <div style="padding: 20px 24px; margin-bottom: 30px;">
+                <h2 class="glass-title" style="font-size: 28px; -webkit-text-fill-color: initial; background: linear-gradient(135deg, #FFD700, #FFB800); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    ☕ Coffee Admin
+                </h2>
+                <p class="glass-subtitle" style="font-size: 14px;">Management Panel</p>
+            </div>
+
+            <MudNavMenu>
+                <MudNavLink Href="/admin/dashboard" Icon="@Icons.Material.Filled.Dashboard" Match="NavLinkMatch.Prefix">
+                    Dashboard
+                </MudNavLink>
+                <MudNavLink Href="/admin/products" Icon="@Icons.Material.Filled.Coffee" Match="NavLinkMatch.Prefix">
+                    Products
+                </MudNavLink>
+                <MudNavLink Href="/admin/categories" Icon="@Icons.Material.Filled.Category" Match="NavLinkMatch.Prefix">
+                    Categories
+                </MudNavLink>
+            </MudNavMenu>
+        </div>
+
+        <!-- Main Content -->
+        <div style="flex: 1; padding: 30px 40px; overflow-y: auto;">
+            <div class="glass-card" style="min-height: calc(100vh - 60px); background: rgba(255, 255, 255, 0.05);">
+                @Body
+            </div>
+        </div>
+    </div>
+</MudRTLProvider>
+
+
+@code {
+    private void Logout()
+    {
+        NavigationManager.NavigateTo("/admin/login");
+    }
+}

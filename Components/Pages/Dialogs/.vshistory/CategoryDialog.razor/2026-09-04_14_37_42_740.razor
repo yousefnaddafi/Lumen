@@ -1,0 +1,120 @@
+﻿@using Lumen.Models
+@using MudBlazor
+
+<MudDialog Class="glass-dialog">
+    <TitleContent>
+        <div class="dialog-title">
+            <span class="dialog-icon">📂</span>
+            <span class="dialog-title-text">
+                @(IsEdit ? "ویرایش دسته‌بندی" : "دسته‌بندی جدید")
+            </span>
+            @if (IsMobile)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.Close"
+                               Color="Color.Default"
+                               OnClick="@(() => MudDialog.CloseAsync())"
+                               Style="color: rgba(255,255,255,0.6);" />
+            }
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="Category.Title"
+                      Label="نام دسته‌بندی"
+                      Required="true"
+                      Class="glass-input"
+                      Variant="Variant.Outlined" />
+    </DialogContent>
+    <DialogActions>
+        <div class="dialog-actions">
+            <MudButton Variant="Variant.Text"
+                       Color="Color.Default"
+                       Class="glass-btn-outline"
+                       Style="@(IsMobile ? "flex: 1;" : "")"
+                       OnClick="@(() => MudDialog.CloseAsync())">
+                انصراف
+            </MudButton>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Warning"
+                       Class="glass-btn"
+                       Style="@(IsMobile ? "flex: 1;" : "")"
+                       OnClick="@(() => MudDialog.CloseAsync(DialogResult.Ok(Category)))">
+                @(IsEdit ? "بروزرسانی" : "ایجاد")
+            </MudButton>
+        </div>
+    </DialogActions>
+</MudDialog>
+
+<style>
+    .dialog-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+    }
+
+    .dialog-icon {
+        font-size: 24px;
+    }
+
+    .dialog-title-text {
+        color: #fff;
+        font-weight: 600;
+        font-size: 20px;
+        flex: 1;
+    }
+
+    .dialog-actions {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+        padding: 0 8px;
+    }
+
+    @@media (max-width: 768px) {
+        .dialog-title-text {
+            font-size: 18px;
+        }
+
+        .dialog-actions {
+            flex-direction: column-reverse;
+        }
+
+            .dialog-actions .glass-btn,
+            .dialog-actions .glass-btn-outline {
+                width: 100%;
+                margin: 4px 0 !important;
+            }
+
+        .mud-dialog-content {
+            padding: 16px !important;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .dialog-title-text {
+            font-size: 16px;
+        }
+
+        .mud-dialog-content {
+            padding: 12px !important;
+        }
+
+        .glass-input .mud-input-root {
+            font-size: 14px !important;
+        }
+    }
+</style>
+
+@code {
+    [CascadingParameter]
+    MudDialog? MudDialog { get; set; }
+
+    [Parameter]
+    public ProductCategory Category { get; set; } = new();
+
+    [Parameter]
+    public bool IsEdit { get; set; }
+
+    [Parameter]
+    public bool IsMobile { get; set; }
+}

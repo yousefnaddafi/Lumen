@@ -84,7 +84,7 @@ namespace Lumen.Services.MediaServices
             OutPutSaveImage outPutSave = new OutPutSaveImage();
             try
             {
-                if (base64.StartsWith("data:image/png;base64,"))
+                if (base64.StartsWith("data:image"))
                 {
                     base64 = base64.Split(",")[1];
                 }

@@ -1,0 +1,295 @@
+﻿:root {
+    --glass-bg: rgba(255, 255, 255, 0.06);
+    --glass-border: rgba(255, 215, 0, 0.12);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+    --yellow-primary: #FFD700;
+    --yellow-light: #FFE44D;
+    --yellow-dark: #F5C800;
+    --yellow-gradient: linear-gradient(135deg, #FFD700 0%, #FFB800 100%);
+}
+
+* {
+    font-family: 'Vazirmatn', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+}
+
+html, body {
+    background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    color: #fff;
+}
+
+/* Glassmorphism Base */
+.glass-card {
+    background: rgba(255, 255, 255, 0.05) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 215, 0, 0.1) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
+    padding: 24px;
+    transition: all 0.3s ease;
+}
+
+    .glass-card:hover {
+        background: rgba(255, 255, 255, 0.08) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 12px 40px rgba(255, 215, 0, 0.08) !important;
+    }
+
+/* Glass Inputs */
+.glass-input .mud-input-root {
+    background: rgba(255, 255, 255, 0.05) !important;
+    backdrop-filter: blur(5px) !important;
+    border: 1px solid rgba(255, 215, 0, 0.12) !important;
+    border-radius: 12px !important;
+    color: #fff !important;
+    padding: 12px 16px !important;
+}
+
+    .glass-input .mud-input-root:hover {
+        border-color: rgba(255, 215, 0, 0.3) !important;
+    }
+
+    .glass-input .mud-input-root:focus {
+        border-color: var(--yellow-primary) !important;
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.05) !important;
+    }
+
+.glass-input .mud-input-label {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.glass-input .mud-input-adornment {
+    color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Glass Buttons */
+.glass-btn {
+    background: var(--yellow-gradient) !important;
+    color: #1a1a1a !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    padding: 12px 28px !important;
+    transition: all 0.3s ease !important;
+    border: none !important;
+    box-shadow: 0 4px 20px rgba(255, 215, 0, 0.2) !important;
+    font-family: 'Vazirmatn', sans-serif !important;
+    text-transform: none !important;
+}
+
+    .glass-btn:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 30px rgba(255, 215, 0, 0.35) !important;
+        background: var(--yellow-gradient) !important;
+    }
+
+    .glass-btn:active {
+        transform: translateY(0px) !important;
+    }
+
+.glass-btn-outline {
+    background: transparent !important;
+    color: var(--yellow-primary) !important;
+    border: 2px solid var(--yellow-primary) !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    padding: 10px 24px !important;
+    transition: all 0.3s ease !important;
+    font-family: 'Vazirmatn', sans-serif !important;
+    text-transform: none !important;
+}
+
+    .glass-btn-outline:hover {
+        background: rgba(255, 215, 0, 0.1) !important;
+        color: var(--yellow-primary) !important;
+        transform: translateY(-2px) !important;
+    }
+
+/* Glass Table */
+.glass-table .mud-table-container {
+    background: rgba(255, 255, 255, 0.02) !important;
+    backdrop-filter: blur(10px) !important;
+    border-radius: 16px !important;
+    border: 1px solid rgba(255, 255, 255, 0.03) !important;
+}
+
+.glass-table .mud-table-head {
+    background: rgba(255, 215, 0, 0.05) !important;
+}
+
+    .glass-table .mud-table-head th {
+        color: var(--yellow-primary) !important;
+        font-weight: 600 !important;
+        border-bottom: 2px solid rgba(255, 215, 0, 0.1) !important;
+        font-family: 'Vazirmatn', sans-serif !important;
+        padding: 16px !important;
+    }
+
+.glass-table .mud-table-row {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03) !important;
+    transition: all 0.3s ease !important;
+}
+
+    .glass-table .mud-table-row:hover {
+        background: rgba(255, 215, 0, 0.03) !important;
+    }
+
+.glass-table .mud-table-cell {
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-family: 'Vazirmatn', sans-serif !important;
+    padding: 16px !important;
+}
+
+/* Navigation */
+.glass-nav {
+    background: rgba(0, 0, 0, 0.5) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-left: 1px solid rgba(255, 215, 0, 0.06) !important;
+    border-right: none !important;
+}
+
+    .glass-nav .mud-nav-link {
+        color: rgba(255, 255, 255, 0.5) !important;
+        transition: all 0.3s ease !important;
+        border-radius: 12px !important;
+        margin: 4px 8px !important;
+        padding: 12px 16px !important;
+        font-family: 'Vazirmatn', sans-serif !important;
+        font-size: 15px !important;
+    }
+
+        .glass-nav .mud-nav-link:hover {
+            background: rgba(255, 215, 0, 0.06) !important;
+            color: var(--yellow-primary) !important;
+        }
+
+        .glass-nav .mud-nav-link.active {
+            background: rgba(255, 215, 0, 0.08) !important;
+            color: var(--yellow-primary) !important;
+        }
+
+        .glass-nav .mud-nav-link .mud-nav-link-icon {
+            margin-left: 12px !important;
+            margin-right: 0 !important;
+            color: rgba(255, 215, 0, 0.6) !important;
+        }
+
+/* Dialog */
+.glass-dialog .mud-dialog-container {
+    background: rgba(0, 0, 0, 0.6) !important;
+    backdrop-filter: blur(8px) !important;
+}
+
+.glass-dialog .mud-paper {
+    background: rgba(20, 20, 20, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 215, 0, 0.12) !important;
+    border-radius: 24px !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6) !important;
+    padding: 8px !important;
+}
+
+.glass-dialog .mud-dialog-title {
+    color: #fff !important;
+    padding: 16px 24px !important;
+}
+
+.glass-dialog .mud-dialog-content {
+    padding: 8px 24px 24px 24px !important;
+}
+
+.glass-dialog .mud-dialog-actions {
+    padding: 8px 24px 24px 24px !important;
+}
+
+/* Switch */
+.glass-switch .mud-switch-track {
+    background: rgba(255, 255, 255, 0.15) !important;
+}
+
+    .glass-switch .mud-switch-track.checked {
+        background: var(--yellow-primary) !important;
+    }
+
+.glass-switch .mud-switch-label {
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-family: 'Vazirmatn', sans-serif !important;
+}
+
+/* Titles */
+.glass-title {
+    background: var(--yellow-gradient) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.5px !important;
+    margin: 0 !important;
+}
+
+.glass-subtitle {
+    color: rgba(255, 255, 255, 0.4) !important;
+    font-weight: 300 !important;
+    margin: 4px 0 0 0 !important;
+}
+
+/* Status Indicators */
+.status-available {
+    color: #4CAF50 !important;
+    background: rgba(76, 175, 80, 0.12) !important;
+    padding: 4px 14px !important;
+    border-radius: 20px !important;
+    font-size: 0.85rem !important;
+    display: inline-block !important;
+}
+
+.status-unavailable {
+    color: #f44336 !important;
+    background: rgba(244, 67, 54, 0.12) !important;
+    padding: 4px 14px !important;
+    border-radius: 20px !important;
+    font-size: 0.85rem !important;
+    display: inline-block !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 215, 0, 0.3);
+    border-radius: 10px;
+}
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 215, 0, 0.5);
+    }
+
+/* Mobile Styles */
+@media (max-width: 768px) {
+    .glass-card {
+        padding: 16px !important;
+        border-radius: 16px !important;
+    }
+
+    .glass-title {
+        font-size: 20px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .glass-card {
+        padding: 12px !important;
+        border-radius: 12px !important;
+    }
+}

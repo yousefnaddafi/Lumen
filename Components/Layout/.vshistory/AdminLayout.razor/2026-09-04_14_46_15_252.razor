@@ -1,0 +1,251 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+
+@using MudBlazor
+@using Microsoft.JSInterop
+
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudRTLProvider RightToLeft="true">
+    <div style="display: flex; min-height: 100vh; position: relative;">
+        <!-- Mobile Menu Toggle -->
+        <div class="mobile-menu-toggle" @onclick="ToggleDrawer">
+            <svg style="width: 28px; height: 28px; color: var(--yellow-primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+        </div>
+
+        <!-- Sidebar Overlay for Mobile -->
+        @if (isDrawerOpen && isMobile)
+        {
+            <div class="drawer-overlay" @onclick="ToggleDrawer"></div>
+        }
+
+        <!-- Navigation Sidebar -->
+        <div class="@($"glass-nav {(!isDrawerOpen && isMobile ? "drawer-closed" : "")}")"
+             style="width: 280px; min-height: 100vh; padding: 20px 0; position: fixed; top: 0; right: 0; z-index: 1000; transition: transform 0.3s ease;">
+
+            @if (isMobile)
+            {
+                <div class="drawer-close" @onclick="ToggleDrawer">
+                    <svg style="width: 24px; height: 24px; color: rgba(255,255,255,0.6);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </div>
+            }
+
+            <div style="padding: 20px 24px; margin-bottom: 30px; text-align: right;">
+                <h2 style="font-size: 24px; margin: 0; background: linear-gradient(135deg, #FFD700, #FFB800); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    ☕ پنل قهوه
+                </h2>
+                <p style="font-size: 13px; color: rgba(255,255,255,0.4); margin: 4px 0 0 0;">پنل مدیریت</p>
+            </div>
+
+            <MudNavMenu>
+                <MudNavLink Href="/admin/dashboard" Icon="@Icons.Material.Filled.Dashboard" Match="NavLinkMatch.Prefix" OnClick="CloseDrawerIfMobile">
+                    داشبورد
+                </MudNavLink>
+                <MudNavLink Href="/admin/products" Icon="@Icons.Material.Filled.Coffee" Match="NavLinkMatch.Prefix" OnClick="CloseDrawerIfMobile">
+                    محصولات
+                </MudNavLink>
+                <MudNavLink Href="/admin/categories" Icon="@Icons.Material.Filled.Category" Match="NavLinkMatch.Prefix" OnClick="CloseDrawerIfMobile">
+                    دسته‌بندی‌ها
+                </MudNavLink>
+            </MudNavMenu>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content" style="flex: 1; padding: 20px; margin-right: 0; transition: margin-right 0.3s ease;">
+            <div style="min-height: calc(100vh - 40px); background: rgba(255, 255, 255, 0.03); border-radius: 20px; padding: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.03);">
+                @Body
+            </div>
+        </div>
+    </div>
+</MudRTLProvider>
+
+<style>
+    .mobile-menu-toggle {
+        display: none;
+        position: fixed;
+        top: 15px;
+        right: 15px;
+        z-index: 999;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(10px);
+        padding: 8px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 215, 0, 0.15);
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+        .mobile-menu-toggle:hover {
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+    .drawer-overlay {
+        position: fixed;
+        top: 0;
+        right: 0;
+        left: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        z-index: 999;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .drawer-close {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        right: auto;
+        padding: 8px;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+        .drawer-close:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+    .drawer-closed {
+        transform: translateX(100%);
+    }
+
+    @@media (min-width: 769px) {
+        .main-content
+
+    {
+        margin-right: 280px !important;
+        padding: 30px 40px !important;
+    }
+
+    .glass-nav {
+        position: fixed !important;
+        transform: none !important;
+        right: 0 !important;
+        left: auto !important;
+    }
+
+    .drawer-close {
+        display: none !important;
+    }
+
+    }
+
+    @@media (max-width: 768px) {
+        .mobile-menu-toggle
+
+    {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .main-content {
+        padding: 15px !important;
+        margin-right: 0 !important;
+        padding-top: 70px !important;
+    }
+
+    .glass-nav {
+        position: fixed !important;
+        width: 280px !important;
+        transform: translateX(0);
+        transition: transform 0.3s ease;
+        right: 0 !important;
+        left: auto !important;
+    }
+
+    .drawer-closed {
+        transform: translateX(100%) !important;
+    }
+
+    }
+
+    @@media (max-width: 480px) {
+        .main-content
+
+    {
+        padding: 10px !important;
+        padding-top: 65px !important;
+    }
+
+    }
+
+    @@keyframes fadeIn {
+        from
+
+    {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+
+    }
+</style>
+
+@code {
+    private bool isDrawerOpen = false;
+    private bool isMobile = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckScreenSize();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await CheckScreenSize();
+            StateHasChanged();
+        }
+    }
+
+    private async Task CheckScreenSize()
+    {
+        try
+        {
+            var width = await JSRuntime.InvokeAsync<int>("window.innerWidth");
+            isMobile = width <= 768;
+            if (!isMobile)
+            {
+                isDrawerOpen = true;
+            }
+            else
+            {
+                isDrawerOpen = false;
+            }
+        }
+        catch
+        {
+            isMobile = false;
+            isDrawerOpen = true;
+        }
+    }
+
+    private void ToggleDrawer()
+    {
+        isDrawerOpen = !isDrawerOpen;
+        StateHasChanged();
+    }
+
+    private void CloseDrawerIfMobile()
+    {
+        if (isMobile)
+        {
+            isDrawerOpen = false;
+            StateHasChanged();
+        }
+    }
+
+    [Inject]
+    private IJSRuntime JSRuntime { get; set; }
+}

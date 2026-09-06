@@ -1,0 +1,185 @@
+﻿@using Lumen.Models
+@using MudBlazor
+
+<MudDialog Class="glass-dialog">
+    <TitleContent>
+        <div class="dialog-title">
+            <span class="dialog-icon">☕</span>
+            <span class="dialog-title-text">
+                @(IsEdit ? "ویرایش محصول" : "محصول جدید")
+            </span>
+            @if (IsMobile)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.Close"
+                               Color="Color.Default"
+                               OnClick="@(() => MudDialog.Cancel())"
+                               Style="color: rgba(255,255,255,0.6);" />
+            }
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="Product.Title"
+                              Label="عنوان"
+                              For="@(() => Product.Title)"
+                              Required="true"
+                              Class="glass-input"
+                              Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudSelect @bind-Value="Product.ProductCategoryId"
+                           Label="دسته‌بندی"
+                           Required="true"
+                           Class="glass-input"
+                           Variant="Variant.Outlined"
+                           AnchorOrigin="Origin.BottomCenter">
+                    @foreach (var category in Categories)
+                    {
+                        <MudSelectItem Value="@category.ProductCategoryId">
+                            @category.Title
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudSwitch @bind-Value="Product.IsAvailable"
+                           Label="موجود"
+                           Color="Color.Warning"
+                           Class="glass-switch" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudNumericField @bind-Value="Product.EcoPrice"
+                                 Label="قیمت اقتصادی (تومان)"
+                                 Required="true"
+                                 Class="glass-input"
+                                 Variant="Variant.Outlined"
+                                 Format="N0" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudNumericField @bind-Value="Product.BusinessPrice"
+                                 Label="قیمت صنفی (تومان)"
+                                 Class="glass-input"
+                                 Variant="Variant.Outlined"
+                                 Format="N0" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="Product.Description"
+                              Label="توضیحات"
+                              Lines="3"
+                              Class="glass-input"
+                              Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="Product.Image"
+                              Label="آدرس تصویر"
+                              Class="glass-input"
+                              Variant="Variant.Outlined" />
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <div class="dialog-actions">
+            <MudButton Variant="Variant.Text"
+                       Color="Color.Default"
+                       Class="glass-btn-outline"
+                       Style="@(IsMobile ? "flex: 1;" : "")"
+                       OnClick="@(() => MudDialog.Cancel())">
+                انصراف
+            </MudButton>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Warning"
+                       Class="glass-btn"
+                       Style="@(IsMobile ? "flex: 1;" : "")"
+                       OnClick="@(() => MudDialog.Close(DialogResult.Ok(Product)))">
+                @(IsEdit ? "بروزرسانی" : "ایجاد")
+            </MudButton>
+        </div>
+    </DialogActions>
+</MudDialog>
+
+<style>
+    .dialog-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+    }
+
+    .dialog-icon {
+        font-size: 24px;
+    }
+
+    .dialog-title-text {
+        color: #fff;
+        font-weight: 600;
+        font-size: 20px;
+        flex: 1;
+    }
+
+    .dialog-actions {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+        padding: 0 8px;
+    }
+
+    @@media (max-width: 768px) {
+        .dialog-title-text {
+            font-size: 18px;
+        }
+
+        .dialog-actions {
+            flex-direction: column-reverse;
+        }
+
+            .dialog-actions .glass-btn,
+            .dialog-actions .glass-btn-outline {
+                width: 100%;
+                margin: 4px 0 !important;
+            }
+
+        .mud-dialog-content {
+            padding: 16px !important;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .dialog-title-text {
+            font-size: 16px;
+        }
+
+        .mud-dialog-content {
+            padding: 12px !important;
+        }
+
+        .glass-input .mud-input-root {
+            font-size: 14px !important;
+        }
+    }
+</style>
+
+@code {
+    [CascadingParameter]
+    MudDialog? MudDialog { get; set; }
+
+    [Parameter]
+    public Product Product { get; set; } = new();
+
+    [Parameter]
+    public List<ProductCategory> Categories { get; set; } = new();
+
+    [Parameter]
+    public bool IsEdit { get; set; }
+
+    [Parameter]
+    public bool IsMobile { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (Product.CreateDate == default)
+        {
+            Product.CreateDate = DateTime.Now;
+        }
+    }
+}

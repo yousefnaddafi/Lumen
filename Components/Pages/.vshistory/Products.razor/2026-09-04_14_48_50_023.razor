@@ -1,0 +1,409 @@
+﻿@page "/admin/products"
+@using Lumen.Components.Pages.Dialogs
+@using Lumen.Models
+@using MudBlazor
+@using Microsoft.JSInterop
+@using Lumen.Services.ProductCatgoryServices
+@using Lumen.Services.ProductServices
+@layout Components.Layout.AdminLayout
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject HttpClient Http
+@inject IProductService ProductService
+@inject IProductCategoryService CategoryService
+
+<PageTitle>محصولات - پنل قهوه</PageTitle>
+
+<div class="products-container">
+    <!-- Header Section -->
+    <div class="page-header">
+        <div class="header-content">
+            <div>
+                <h3 class="glass-title">☕ محصولات</h3>
+                <p class="glass-subtitle">مدیریت محصولات قهوه</p>
+            </div>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Warning"
+                       Class="glass-btn"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       @onclick="() => OpenDialog(product)"
+                       Style="@(isMobile ? "padding: 10px 16px !important; font-size: 14px !important;" : "")">
+                @(isMobile ? "افزودن" : "افزودن محصول جدید")
+            </MudButton>
+        </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="search-bar">
+        <MudTextField @bind-Value="searchString"
+                      Placeholder="جستجوی محصولات..."
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      Class="glass-input"
+                      Style="@($"flex: 1; {(isMobile ? "width: 100% !important;" : "max-width: 300px;")}")"
+                      Immediate="true"
+                      OnKeyUp="@(e => OnSearch())" />
+    </div>
+
+    <!-- Mobile Grid / Desktop Table -->
+    @if (isMobile)
+    {
+        <div class="product-grid">
+            @foreach (var product in filteredProducts)
+            {
+                <div class="product-card glass-card">
+                    <div class="product-header">
+                        <div class="product-icon">☕</div>
+                        <div class="product-actions">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                           Size="Size.Small"
+                                           Color="Color.Warning"
+                                           OnClick="@(() => OpenDialog(product))" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                           Size="Size.Small"
+                                           Color="Color.Error"
+                                           OnClick="@(() => DeleteProduct(product))" />
+                        </div>
+                    </div>
+                    <h4 class="product-title">@product.Title</h4>
+                    <div class="product-details">
+                        <span class="product-category">📂 @product.CategoryName</span>
+                        <span class="@(product.IsAvailable ? "status-available" : "status-unavailable")">
+                            @(product.IsAvailable ? "✓ موجود" : "✗ ناموجود")
+                        </span>
+                    </div>
+                    <div class="product-pricing">
+                        <span class="eco-price">@product.EcoPrice.ToString("N0") تومان</span>
+                        @if (product.BusinessPrice.HasValue)
+                        {
+                            <span class="business-price">@product.BusinessPrice.Value.ToString("N0") تومان</span>
+                        }
+                    </div>
+                    <div class="product-date">
+                        <small>@product.CreateDate.ToString("yyyy/MM/dd")</small>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <MudTable T="Product"
+                  Items="@filteredProducts"
+                  Class="glass-table"
+                  Hover="true"
+                  Elevation="0"
+                  Style="background: transparent;">
+
+            <HeaderContent>
+                <MudTh>تصویر</MudTh>
+                <MudTh>عنوان</MudTh>
+                <MudTh>دسته‌بندی</MudTh>
+                <MudTh>وضعیت</MudTh>
+                <MudTh>قیمت اقتصادی</MudTh>
+                <MudTh>قیمت صنفی</MudTh>
+                <MudTh>تاریخ ایجاد</MudTh>
+                <MudTh>عملیات</MudTh>
+            </HeaderContent>
+
+            <RowTemplate>
+                <MudTd>
+                    <div style="width: 40px; height: 40px; border-radius: 8px; background: rgba(255,215,0,0.1); display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                        ☕
+                    </div>
+                </MudTd>
+                <MudTd><span style="color: #fff; font-weight: 500;">@context.Title</span></MudTd>
+                <MudTd><span style="color: rgba(255,255,255,0.7);">@context.CategoryName</span></MudTd>
+                <MudTd>
+                    <span class="@(context.IsAvailable ? "status-available" : "status-unavailable")">
+                        @(context.IsAvailable ? "موجود" : "ناموجود")
+                    </span>
+                </MudTd>
+                <MudTd><span style="color: var(--yellow-primary);">@context.EcoPrice.ToString("N0") تومان</span></MudTd>
+                <MudTd><span style="color: rgba(255,255,255,0.7);">@(context.BusinessPrice?.ToString("N0") ?? "—")</span></MudTd>
+                <MudTd><span style="color: rgba(255,255,255,0.5); font-size: 0.85rem;">@context.CreateDate.ToString("yyyy/MM/dd")</span></MudTd>
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                   Size="Size.Small"
+                                   Color="Color.Warning"
+                                   OnClick="@(() => OpenDialog(context))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Size="Size.Small"
+                                   Color="Color.Error"
+                                   OnClick="@(() => DeleteProduct(context))" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+
+    <!-- Pagination -->
+    @if (filteredProducts.Count > 10)
+    {
+        <div class="pagination-container">
+            <MudPagination Count="@((int)Math.Ceiling(filteredProducts.Count / 10.0))"
+                           @bind-SelectedIndex="currentPage"
+                           Color="Color.Warning"
+                           Variant="Variant.Filled"
+                           Size="@(isMobile ? Size.Small : Size.Medium)" />
+        </div>
+    }
+</div>
+
+<style>
+    .products-container {
+        width: 100%;
+    }
+
+    .page-header {
+        margin-bottom: 24px;
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .search-bar {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+
+    .product-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+        margin-top: 16px;
+    }
+
+    .product-card {
+        padding: 16px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 32px rgba(255, 215, 0, 0.12);
+        }
+
+    .product-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .product-icon {
+        font-size: 32px;
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 215, 0, 0.08);
+        border-radius: 12px;
+    }
+
+    .product-actions {
+        display: flex;
+        gap: 4px;
+    }
+
+    .product-title {
+        color: #fff;
+        margin: 8px 0;
+        font-size: 18px;
+        font-weight: 600;
+        text-align: right;
+    }
+
+    .product-details {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 8px 0;
+    }
+
+    .product-category {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 14px;
+    }
+
+    .product-pricing {
+        display: flex;
+        gap: 12px;
+        margin: 8px 0;
+        justify-content: flex-end;
+    }
+
+    .eco-price {
+        color: var(--yellow-primary);
+        font-weight: 600;
+        font-size: 16px;
+    }
+
+    .business-price {
+        color: rgba(255, 255, 255, 0.3);
+        font-size: 14px;
+        text-decoration: line-through;
+    }
+
+    .product-date {
+        margin-top: 8px;
+        color: rgba(255, 255, 255, 0.25);
+        font-size: 12px;
+        text-align: left;
+    }
+
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 24px;
+    }
+
+    @@media (max-width: 768px) {
+        .header-content {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+            .header-content .glass-btn {
+                width: 100%;
+            }
+
+        .search-bar .glass-input {
+            width: 100% !important;
+            max-width: none !important;
+        }
+
+        .product-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .product-card {
+            padding: 14px;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .product-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .product-title {
+            font-size: 16px;
+        }
+
+        .product-details {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+        }
+    }
+</style>
+
+@code {
+    private List<Product> products = new();
+    private List<ProductCategory> categories = new();
+    private string searchString = "";
+    private int currentPage = 1;
+    private bool isMobile = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckScreenSize();
+        await LoadData();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await CheckScreenSize();
+            StateHasChanged();
+        }
+    }
+
+    private async Task CheckScreenSize()
+    {
+        try
+        {
+            var width = await JSRuntime.InvokeAsync<int>("window.innerWidth");
+            isMobile = width <= 768;
+        }
+        catch
+        {
+            isMobile = false;
+        }
+    }
+
+    private async Task LoadData()
+    {
+        products =  ProductService.GetAll(null,null);
+        categories = CategoryService.GetAll(0,0,null);
+    }
+
+    private List<Product> filteredProducts => string.IsNullOrEmpty(searchString)
+        ? products
+        : products.Where(p => p.Title.Contains(searchString, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    private void OnSearch()
+    {
+        StateHasChanged();
+    }
+
+    private async Task OpenDialog(Product? product)
+    {
+        var parameters = new DialogParameters
+        {
+            ["Product"] = product ?? new Product(),
+            ["Categories"] = categories,
+            ["IsEdit"] = product != null,
+            ["IsMobile"] = isMobile
+        };
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            CloseOnEscapeKey = true,
+            Position = DialogPosition.Center
+        };
+
+        var dialog = await DialogService.ShowAsync<ProductDialog>("", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await LoadData();
+            Snackbar.Add(
+                product == null ? "محصول با موفقیت ایجاد شد!" : "محصول با موفقیت بروزرسانی شد!",
+                Severity.Success);
+        }
+    }
+
+    private async Task DeleteProduct(Product product)
+    {
+        bool? result = await DialogService.ShowMessageBoxAsync(
+            "حذف محصول",
+            $"آیا از حذف '{product.Title}' مطمئن هستید؟",
+            "حذف",
+            "انصراف");
+
+        if (result == true)
+        {
+            await ProductService.Delete(product.ProductId);
+            await LoadData();
+            Snackbar.Add("محصول با موفقیت حذف شد!", Severity.Error);
+        }
+    }
+
+    [Inject]
+    private IJSRuntime JSRuntime { get; set; }
+}

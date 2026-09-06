@@ -1,0 +1,100 @@
+﻿@page "/admin/login"
+@rendermode InteractiveServer
+@using MudBlazor
+@inject NavigationManager NavigationManager
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+<div class="admin-login-container">
+    <div class="glass-card login-card">
+        <div class="login-header">
+            <h1>☕ لومن | پنل مدیریت</h1>
+            <p>به پنل مدیریت منوی کافه لومن خوش آمدید</p>
+        </div>
+
+        <MudForm @ref="form" Validation="@(new LoginValidator())" @bind-IsValid="isValid">
+            <div class="form-group">
+                <label>نام کاربری</label>
+                <MudTextField @bind-Value="loginModel.Username"
+                              For="@(() => loginModel.Username)"
+                              Class="glass-input"
+                              Placeholder="نام کاربری خود را وارد کنید"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Style="color: #fff;"
+                              InputClass="glass-input" />
+            </div>
+
+            <div class="form-group">
+                <label>رمز عبور</label>
+                <MudTextField @bind-Value="loginModel.Password"
+                              For="@(() => loginModel.Password)"
+                              Class="glass-input"
+                              Placeholder="رمز عبور خود را وارد کنید"
+                              InputType="InputType.Password"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Style="color: #fff;"
+                              InputClass="glass-input" />
+            </div>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="error-message">@errorMessage</div>
+            }
+
+            <MudButton ButtonType="ButtonType.Submit"
+                       Variant="Variant.Filled"
+                       Color="Color.Warning"
+                       OnClick="@HandleLogin"
+                       FullWidth="true"
+                       Class="btn-glass-primary"
+                       Style="margin-top: 8px;">
+                ورود به پنل مدیریت
+            </MudButton>
+        </MudForm>
+    </div>
+</div>
+
+
+@code {
+    private MudForm? form;
+    private bool isValid = false;
+    private LoginModel loginModel = new();
+    private string errorMessage = "";
+
+
+    // private LoginModel loginModel = new();
+    // private string errorMessage = "";
+
+    private async Task HandleLogin()
+    {
+        await InvokeAsync(StateHasChanged);
+        if (loginModel.Username == "admin" && loginModel.Password == "LumenCafe2026")
+        {
+            NavigationManager.NavigateTo("/admin/products");
+        }
+        else
+        {
+            errorMessage = "نام کاربری یا رمز عبور اشتباه است";
+            loginModel.Password = ""; // Clear password for security
+        }
+    }
+    public class LoginValidator : ValidatorBase
+    {
+        protected override bool ValidateValue(object? value, string propertyName, ICollection<string> errors)
+        {
+            if (string.IsNullOrEmpty(value?.ToString()))
+            {
+                errors.Add($"{propertyName} الزامی است");
+                return false;
+            }
+            return true;
+        }
+    }
+    public class LoginModel
+    {
+        public string? Username { get; set; }
+        public string? Password { get; set; }
+    }
+}

@@ -1,0 +1,306 @@
+﻿@page "/admin/categories"
+@using Lumen.Models
+@using MudBlazor
+@using Lumen.Services.ProductCatgoryServices
+@using Lumen.Services.ProductServices
+@layout Components.Layout.AdminLayout
+@inject HttpClient Http
+@inject IProductCategoryService CategoryService
+@inject IProductService ProductService
+@inject ISnackbar Snackbar
+
+<PageTitle>دسته‌بندی‌ها - پنل قهوه</PageTitle>
+
+<div class="categories-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <div>
+                <h3 class="glass-title">📂 دسته‌بندی‌ها</h3>
+                <p class="glass-subtitle">مدیریت دسته‌بندی محصولات</p>
+            </div>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Warning"
+                       Class="glass-btn"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="@(() => OpenDialog(null))"
+                       Style="@(isMobile ? "padding: 10px 16px !important; font-size: 14px !important;" : "")">
+                @(isMobile ? "افزودن" : "افزودن دسته‌بندی جدید")
+            </MudButton>
+        </div>
+    </div>
+
+    <!-- Search -->
+    <div class="search-bar">
+        <MudTextField @bind-Value="searchString"
+                      Placeholder="جستجوی دسته‌بندی‌ها..."
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      Class="glass-input"
+                      Style="@($"flex: 1; {(isMobile ? "width: 100% !important;" : "max-width: 300px;")}")"
+                      Immediate="true"
+                      OnKeyUp="@(e => OnSearch())" />
+    </div>
+
+    <!-- Category Grid -->
+    <div class="category-grid">
+        @foreach (var category in filteredCategories)
+        {
+            <div class="category-card glass-card">
+                <div class="category-content">
+                    <div class="category-icon">📂</div>
+                    <div class="category-info">
+                        <h5 class="category-title">@category.Title</h5>
+                        <span class="category-product-count">
+                            @GetProductCount(category.ProductCategoryId) محصول
+                        </span>
+                    </div>
+                    <div class="category-actions">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                       Size="Size.Small"
+                                       Color="Color.Warning"
+                                       OnClick="@(() => OpenDialog(category))" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                       Size="Size.Small"
+                                       Color="Color.Error"
+                                       OnClick="@(() => DeleteCategory(category))" />
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .categories-container {
+        width: 100%;
+    }
+
+    .page-header {
+        margin-bottom: 24px;
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .search-bar {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+
+    .category-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .category-card {
+        padding: 20px;
+        transition: all 0.3s ease;
+    }
+
+        .category-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 32px rgba(255, 215, 0, 0.12);
+        }
+
+    .category-content {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .category-icon {
+        font-size: 36px;
+        width: 56px;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 215, 0, 0.08);
+        border-radius: 12px;
+        flex-shrink: 0;
+    }
+
+    .category-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .category-title {
+        color: #fff;
+        margin: 0 0 4px 0;
+        font-size: 18px;
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-align: right;
+    }
+
+    .category-product-count {
+        color: rgba(255, 255, 255, 0.4);
+        font-size: 13px;
+    }
+
+    .category-actions {
+        display: flex;
+        gap: 4px;
+        flex-shrink: 0;
+    }
+
+    @@media (max-width: 768px) {
+        .header-content {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+            .header-content .glass-btn {
+                width: 100%;
+            }
+
+        .search-bar .glass-input {
+            width: 100% !important;
+            max-width: none !important;
+        }
+
+        .category-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .category-card {
+            padding: 16px;
+        }
+
+        .category-icon {
+            font-size: 28px;
+            width: 48px;
+            height: 48px;
+        }
+
+        .category-title {
+            font-size: 16px;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .category-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .category-content {
+            gap: 12px;
+        }
+    }
+</style>
+
+@code {
+    private List<ProductCategory> categories = new();
+    private List<Product> allProducts = new();
+    private string searchString = "";
+    private bool isMobile = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckScreenSize();
+        await LoadData();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await CheckScreenSize();
+            StateHasChanged();
+        }
+    }
+
+    private async Task CheckScreenSize()
+    {
+        try
+        {
+            var width = await JSRuntime.InvokeAsync<int>("window.innerWidth");
+            isMobile = width <= 768;
+        }
+        catch
+        {
+            isMobile = false;
+        }
+    }
+
+    private async Task LoadData()
+    {
+        categories = await ProductService.GetCategoriesAsync();
+        allProducts = await ProductService.GetAllAsync();
+    }
+
+    private List<ProductCategory> filteredCategories =>
+        string.IsNullOrEmpty(searchString)
+            ? categories
+            : categories.Where(c => c.Title.Contains(searchString, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    private int GetProductCount(long categoryId)
+    {
+        return allProducts.Count(p => p.ProductCategoryId == categoryId);
+    }
+
+    private void OnSearch()
+    {
+        StateHasChanged();
+    }
+
+    private async Task OpenDialog(ProductCategory? category)
+    {
+        var parameters = new DialogParameters
+        {
+            ["Category"] = category ?? new ProductCategory(),
+            ["IsEdit"] = category != null,
+            ["IsMobile"] = isMobile
+        };
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            CloseOnEscapeKey = true,
+            Position = DialogPosition.Center
+        };
+
+        var dialog = await DialogService.ShowAsync<CategoryDialog>("", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await LoadData();
+            Snackbar.Add(
+                category == null ? "دسته‌بندی با موفقیت ایجاد شد!" : "دسته‌بندی با موفقیت بروزرسانی شد!",
+                Severity.Success);
+        }
+    }
+
+    private async Task DeleteCategory(ProductCategory category)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "حذف دسته‌بندی",
+            $"آیا از حذف '{category.Title}' مطمئن هستید؟",
+            "حذف",
+            "انصراف");
+
+        if (result == true)
+        {
+            await ProductService.DeleteCategoryAsync(category.ProductCategoryId);
+            await LoadData();
+            Snackbar.Add("دسته‌بندی با موفقیت حذف شد!", Severity.Error);
+        }
+    }
+
+    [Inject]
+    private IJSRuntime JSRuntime { get; set; }
+}

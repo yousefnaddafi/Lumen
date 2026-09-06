@@ -1,0 +1,186 @@
+﻿@page "/admin/categories"
+@using Lumen.Components.Pages.Dialogs
+@using Lumen.Models
+@using MudBlazor
+@using Lumen.Services.ProductCatgoryServices
+@using Lumen.Services.ProductServices
+@rendermode InteractiveServer
+@layout Components.Layout.AdminLayout
+@inject HttpClient Http
+@inject IProductCategoryService CategoryService
+@inject IDialogService DialogService
+@inject IProductService ProductService
+@inject ISnackbar Snackbar
+<MudDialogProvider></MudDialogProvider>
+
+<PageTitle>دسته‌بندی‌ها - پنل قهوه</PageTitle>
+
+<div style="width: 100%;">
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+        <div>
+            <h3 style="margin: 0; background: linear-gradient(135deg, #FFD700, #FFB800); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 28px; font-weight: 700;">
+                📂 دسته‌بندی‌ها
+            </h3>
+            <p style="color: rgba(255,255,255,0.4); margin: 4px 0 0 0; font-size: 14px;">مدیریت دسته‌بندی محصولات</p>
+        </div>
+        <button class="glass-btn" @onclick="() => OpenDialog(null)" style="cursor: pointer;">
+            + افزودن دسته‌بندی جدید
+        </button>
+    </div>
+
+    <!-- Search -->
+    <div style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 200px;">
+            <input @bind="searchString"
+                   @bind:event="oninput"
+                   placeholder="جستجوی دسته‌بندی‌ها..."
+                   style="width: 100%; max-width: 300px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,215,0,0.12); border-radius: 12px; color: #fff; padding: 12px 16px; font-family: 'Vazirmatn', sans-serif; outline: none; transition: all 0.3s ease;" />
+        </div>
+    </div>
+
+    <!-- Category Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+        @foreach (var category in filteredCategories)
+        {
+            <div style="background: rgba(255,255,255,0.05); backdrop-filter: blur(12px); border: 1px solid rgba(255,215,0,0.08); border-radius: 16px; padding: 20px; transition: all 0.3s ease;">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <div style="font-size: 36px; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; background: rgba(255,215,0,0.06); border-radius: 12px; flex-shrink: 0;">📂</div>
+                    <div style="flex: 1; min-width: 0;">
+                        <h5 style="color: #fff; margin: 0 0 4px 0; font-size: 18px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right;">@category.Title</h5>
+                        <span style="color: rgba(255,255,255,0.3); font-size: 13px;">@GetProductCount(category.ProductCategoryId) محصول</span>
+                    </div>
+                    <div style="display: flex; gap: 4px; flex-shrink: 0;">
+                        <button class="mud-icon-button" @onclick="() => OpenDialog(category)" style="background: none; border: none; color: var(--yellow-primary); cursor: pointer; padding: 8px; border-radius: 8px;">
+                            <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                        </button>
+                        <button class="mud-icon-button" @onclick="() => DeleteCategory(category)" style="background: none; border: none; color: #f44336; cursor: pointer; padding: 8px; border-radius: 8px;">
+                            <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<ProductCategory> categories = new();
+    private List<Product> allProducts = new();
+    private string searchString = "";
+    private bool isMobile = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckScreenSize();
+        await LoadData();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await CheckScreenSize();
+            StateHasChanged();
+        }
+    }
+
+    private async Task CheckScreenSize()
+    {
+        try
+        {
+            var width = await JSRuntime.InvokeAsync<int>("window.innerWidth");
+            isMobile = width <= 768;
+        }
+        catch
+        {
+            isMobile = false;
+        }
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            categories = CategoryService.GetAll(0,0,null);
+            allProducts = ProductService.GetAll(null,null);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("خطا در بارگذاری داده‌ها: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private List<ProductCategory> filteredCategories =>
+        string.IsNullOrEmpty(searchString)
+            ? categories
+            : categories.Where(c => c.Title.Contains(searchString, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    private int GetProductCount(long categoryId)
+    {
+        return allProducts.Count(p => p.ProductCategoryId == categoryId);
+    }
+
+    private async Task OpenDialog(ProductCategory? category)
+    {
+        try
+        {
+            var parameters = new DialogParameters
+            {
+                ["Category"] = category ?? new ProductCategory(),
+                ["IsEdit"] = category != null,
+                ["IsMobile"] = isMobile
+            };
+
+            var options = new DialogOptions
+            {
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                CloseOnEscapeKey = true,
+                Position = DialogPosition.Center,
+                BackdropClick = false
+            };
+
+            var dialog = await DialogService.ShowAsync<CategoryDialog>("", parameters, options);
+            var result = await dialog.Result;
+
+            if (!result.Canceled)
+            {
+                await LoadData();
+                Snackbar.Add(
+                    category == null ? "دسته‌بندی با موفقیت ایجاد شد!" : "دسته‌بندی با موفقیت بروزرسانی شد!",
+                    Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("خطا: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task DeleteCategory(ProductCategory category)
+    {
+        try
+        {
+            bool? result = await DialogService.ShowMessageBoxAsync(
+                "حذف دسته‌بندی",
+                $"آیا از حذف '{category.Title}' مطمئن هستید؟",
+                "حذف",
+                "انصراف");
+
+            if (result == true)
+            {
+                await CategoryService.Delete(category.ProductCategoryId);
+                await LoadData();
+                Snackbar.Add("دسته‌بندی با موفقیت حذف شد!", Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("خطا در حذف دسته‌بندی: " + ex.Message, Severity.Error);
+        }
+    }
+
+    [Inject]
+    private IJSRuntime JSRuntime { get; set; }
+}

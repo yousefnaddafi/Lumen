@@ -2,8 +2,11 @@ using Lumen.Components;
 using Lumen.Extensions;
 using Lumen.InfraStructure;
 using Microsoft.EntityFrameworkCore;
+using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddRazorPages();
+builder.Services.AddServerSideBlazor();
 builder.Services.AddSignalR();
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddRazorComponents()
@@ -12,6 +15,7 @@ builder.Services.AddDbContext<ProjectDBContext>(o =>
 { o.UseSqlServer(builder.Configuration.GetConnectionString("Lumen")); });
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddSession();
+builder.Services.AddMudServices();
 builder.Services.AddDependency();
 //builder.Services.AddSettings(builder.Configuration);
 // Add services to the container.

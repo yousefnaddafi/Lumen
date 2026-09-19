@@ -13,6 +13,11 @@ namespace Lumen.Models
         public long? BusinessPrice { get; set; }
         public string? Description { get; set; }
 
+        public decimal CurrentUnitCost { get; set; }
+        public string? Unit { get; set; }
+        public bool TracksInventory { get; set; } = true;
+
+
         [NotMapped]
         public string? CategoryName { get; set; }
         [NotMapped]

@@ -1,0 +1,556 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+@using Lumen.Models
+@using Microsoft.AspNetCore.Identity
+@using MudBlazor
+@rendermode InteractiveServer
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+@inject SignInManager<AppUser> SignInManager
+
+<MudThemeProvider />
+<MudSnackbarProvider />
+<MudRTLProvider RightToLeft="true">
+    <!-- Mobile Menu Toggle Button -->
+    <MudButton Class="menu-toggle-btn" OnClick="ToggleSidebar">
+        ☰
+    </MudButton>
+
+    <!-- Overlay for mobile -->
+    @if (isMobileOpen)
+    {
+        <div class="sidebar-overlay" @onclick="CloseSidebar"></div>
+    }
+
+    <div style="display: flex; min-height: 100vh; position: relative;">
+        <!-- Sidebar -->
+        <div class="sidebar @(isMobileOpen ? "open" : "")" id="mainSidebar" style="@GetSidebarStyle()">
+            <div class="sidebar-header">
+                <h3>☕ پنل قهوه</h3>
+                <button class="sidebar-close-btn" @onclick="CloseSidebar">✕</button>
+            </div>
+            <hr class="sidebar-divider" />
+
+            <div class="sidebar-nav">
+                <a href="/admin/products"
+                   class="nav-link @(IsActive("/admin/products") ? "active" : "")"
+                   @onclick="CloseSidebar">
+                    📦 محصولات
+                </a>
+                <a href="/admin/categories"
+                   class="nav-link @(IsActive("/admin/categories") ? "active" : "")"
+                   @onclick="CloseSidebar">
+                    📂 دسته‌بندی‌ها
+                </a>
+                <MudButton OnClick="Logout" Variant="Variant.Text" Color="Color.Warning">
+                    خروج
+                </MudButton>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content" style="@GetMainContentStyle()">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <button class="menu-toggle-btn-inline" @onclick="ToggleSidebar">
+                        ☰
+                    </button>
+                    <span class="page-title">@GetPageTitle()</span>
+                </div>
+                @* <div class="top-bar-right">
+                    <input type="text" placeholder="جستجو..." class="search-input" />
+                    <button class="icon-btn">🔔</button>
+                </div> *@
+            </div>
+
+            <!-- Page Content -->
+            <div class="page-content">
+                @Body
+            </div>
+        </div>
+    </div>
+</MudRTLProvider>
+
+<style>
+    /* ====== BASE ====== */
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
+        color: #fff;
+    }
+
+    /* ====== SIDEBAR ====== */
+    .sidebar {
+        width: 250px;
+        background: rgba(0, 0, 0, 0.85);
+        padding: 20px;
+        color: #fff;
+        min-height: 100vh;
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        overflow-y: auto;
+        z-index: 1000;
+        transition: transform 0.3s ease;
+        border-left: 1px solid rgba(255, 215, 0, 0.1);
+        backdrop-filter: blur(10px);
+    }
+
+    .sidebar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+        .sidebar-header h3 {
+            color: #FFD700;
+            margin: 0;
+            font-size: 1.3rem;
+        }
+
+    .sidebar-close-btn {
+        display: none;
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0 8px;
+    }
+
+        .sidebar-close-btn:hover {
+            color: #FFD700;
+        }
+
+    .sidebar-divider {
+        border-color: rgba(255, 215, 0, 0.2);
+        margin-bottom: 20px;
+    }
+
+    .sidebar-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .nav-link {
+        color: rgba(255, 255, 255, 0.6);
+        text-decoration: none;
+        padding: 12px 16px;
+        border-radius: 8px;
+        display: block;
+        transition: all 0.3s ease;
+        font-size: 0.95rem;
+        cursor: pointer;
+    }
+
+        .nav-link:hover {
+            background: rgba(255, 215, 0, 0.1);
+            color: #FFD700;
+        }
+
+        .nav-link.active {
+            background: rgba(255, 215, 0, 0.15);
+            color: #FFD700;
+            border-right: 3px solid #FFD700;
+        }
+
+    /* ====== MOBILE OVERLAY ====== */
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 999;
+        display: none;
+    }
+
+    /* ====== MOBILE MENU TOGGLE ====== */
+    .menu-toggle-btn {
+        display: none;
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        z-index: 1001;
+        background: rgba(255, 215, 0, 0.15);
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        color: #FFD700;
+        font-size: 1.5rem;
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        backdrop-filter: blur(4px);
+    }
+
+        .menu-toggle-btn:hover {
+            background: rgba(255, 215, 0, 0.25);
+        }
+
+    .menu-toggle-btn-inline {
+        display: none;
+        background: none;
+        border: none;
+        color: #FFD700;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 4px 8px;
+    }
+
+        .menu-toggle-btn-inline:hover {
+            color: #FFD700;
+        }
+
+    /* ====== MAIN CONTENT ====== */
+    .main-content {
+        flex: 1;
+        padding: 0;
+        margin-right: 250px;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
+        transition: margin-right 0.3s ease;
+        width: 100%;
+    }
+
+    /* ====== TOP BAR ====== */
+    .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 30px;
+        background: rgba(0, 0, 0, 0.5);
+        border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        backdrop-filter: blur(8px);
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .top-bar-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .page-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #FFD700;
+    }
+
+    .top-bar-right {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .search-input {
+        padding: 8px 16px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.05);
+        color: #fff;
+        font-size: 0.9rem;
+        width: 200px;
+        transition: all 0.3s ease;
+    }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #FFD700;
+            background: rgba(255, 255, 255, 0.08);
+            width: 250px;
+        }
+
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+    .icon-btn {
+        background: none;
+        border: none;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 6px 8px;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+    }
+
+        .icon-btn:hover {
+            color: #FFD700;
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+    /* ====== PAGE CONTENT ====== */
+    .page-content {
+        padding: 24px 30px;
+        min-height: calc(100vh - 80px);
+    }
+
+    /* ==================================== */
+    /* ====== RESPONSIVE ====== */
+    /* ==================================== */
+
+    /* Tablet */
+    @@media (max-width: 1024px) {
+        .sidebar {
+            width: 220px;
+        }
+
+        .main-content {
+            margin-right: 220px;
+        }
+
+        .top-bar {
+            padding: 14px 20px;
+        }
+
+        .page-content {
+            padding: 20px;
+        }
+    }
+
+    /* Mobile */
+    @@media (max-width: 768px) {
+        /* Sidebar hidden by default */
+        .sidebar {
+            transform: translateX(100%);
+            width: 280px;
+        }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+        .sidebar-close-btn {
+            display: block;
+        }
+
+        .sidebar-overlay {
+            display: block;
+        }
+
+        .main-content {
+            margin-right: 0;
+        }
+        /* Show menu buttons */
+        .menu-toggle-btn {
+            display: block;
+        }
+
+        .menu-toggle-btn-inline {
+            display: block;
+        }
+        /* Top bar mobile */
+        .top-bar {
+            padding: 12px 16px;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+        }
+
+        .top-bar-left {
+            justify-content: space-between;
+        }
+
+        .top-bar-right {
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .search-input {
+            width: 100%;
+            flex: 1;
+        }
+
+            .search-input:focus {
+                width: 100%;
+            }
+
+        .page-content {
+            padding: 16px;
+        }
+    }
+
+    /* Small Mobile */
+    @@media (max-width: 480px) {
+        .sidebar {
+            width: 100%;
+            max-width: 320px;
+        }
+
+        .top-bar {
+            padding: 10px 12px;
+        }
+
+        .page-title {
+            font-size: 0.95rem;
+        }
+
+        .page-content {
+            padding: 12px;
+        }
+
+        .search-input {
+            font-size: 0.8rem;
+            padding: 6px 12px;
+        }
+    }
+</style>
+
+@code {
+    private bool isMobileOpen = false;
+    private bool isMobile = false;
+    private bool isJSInitialized = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isMobile = await IsMobileDevice();
+            if (isMobile)
+            {
+                isMobileOpen = false;
+            }
+            else
+            {
+                isMobileOpen = true;
+            }
+        }
+        catch
+        {
+            // Fallback for server-side rendering
+            isMobile = false;
+            isMobileOpen = true;
+        }
+    }
+    private async Task Logout()
+    {
+        await SignInManager.SignOutAsync();
+        Nav.NavigateTo("/admin/login", forceLoad: true);
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !isJSInitialized)
+        {
+            try
+            {
+                // Check if the JS function exists
+                var exists = await JSRuntime.InvokeAsync<bool>("eval", "typeof window.adminLayout !== 'undefined' && typeof window.adminLayout.initResize === 'function'");
+
+                if (exists)
+                {
+                    await JSRuntime.InvokeVoidAsync("adminLayout.initResize",
+                        DotNetObjectReference.Create(this));
+                    isJSInitialized = true;
+                }
+                else
+                {
+                    Console.WriteLine("adminLayout.initResize not found. Using fallback.");
+                    // Use CSS-only approach
+                    isJSInitialized = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error initializing JS: {ex.Message}");
+                isJSInitialized = true;
+            }
+        }
+    }
+
+    [JSInvokable]
+    public void OnResize(int width)
+    {
+        var wasMobile = isMobile;
+        isMobile = width < 768;
+
+        if (isMobile != wasMobile)
+        {
+            if (isMobile)
+            {
+                isMobileOpen = false;
+            }
+            else
+            {
+                isMobileOpen = true;
+            }
+            StateHasChanged();
+        }
+    }
+
+    private async Task<bool> IsMobileDevice()
+    {
+        try
+        {
+            // Check if window exists
+            var exists = await JSRuntime.InvokeAsync<bool>("eval", "typeof window !== 'undefined'");
+            if (!exists) return false;
+
+            return await JSRuntime.InvokeAsync<bool>("eval", "window.innerWidth < 768");
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private async Task ToggleSidebar()
+    {
+        isMobileOpen = !isMobileOpen;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void CloseSidebar()
+    {
+        if (isMobile)
+        {
+            isMobileOpen = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GetSidebarStyle()
+    {
+        if (isMobile)
+        {
+            return isMobileOpen ? "transform: translateX(0);" : "transform: translateX(100%);";
+        }
+        return "";
+    }
+
+    private string GetMainContentStyle()
+    {
+        return "";
+    }
+
+    private bool IsActive(string path)
+    {
+        return NavigationManager.Uri.EndsWith(path);
+    }
+
+    private string GetPageTitle()
+    {
+        var uri = NavigationManager.Uri;
+        if (uri.Contains("/products")) return "مدیریت محصولات";
+        if (uri.Contains("/categories")) return "مدیریت دسته‌بندی‌ها";
+        if (uri.Contains("/orders")) return "مدیریت سفارشات";
+        if (uri.Contains("/users")) return "مدیریت کاربران";
+        if (uri.Contains("/settings")) return "تنظیمات";
+        return "داشبورد";
+    }
+}

@@ -1,0 +1,114 @@
+﻿@page "/admin/orders"
+@attribute [Authorize(Roles = "Owner,BranchManager,Cashier")]
+@rendermode InteractiveServer
+@layout Components.Layout.AdminLayout
+@using Lumen.Models
+@using Lumen.Services.BranchServices
+@using Lumen.Services.OrderServices
+@using MudBlazor
+@using System.Globalization
+@inject IOrderService OrderService
+@inject IBranchService BranchService
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+
+<PageTitle>سفارشات - پنل قهوه</PageTitle>
+
+<div style="width:100%;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
+        <div>
+            <h3 style="margin:0; background: linear-gradient(135deg,#FFD700,#FFB800); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-size:28px; font-weight:700;">
+                🧾 سفارشات
+            </h3>
+            <p style="color: rgba(255,255,255,0.4); margin:4px 0 0 0; font-size:14px;">مدیریت سفارشات شعبه</p>
+        </div>
+        <MudButton Class="glass-btn" OnClick="@(() => Nav.NavigateTo("/admin/orders/new"))">
+            + سفارش جدید
+        </MudButton>
+    </div>
+
+    <div style="display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap; align-items:end;">
+        <MudSelect T="long" @bind-Value="branchId" Label="شعبه" Style="min-width:220px;">
+            @foreach (var b in branches)
+            {
+                <MudSelectItem T="long" Value="@b.BranchId">@b.Title</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudDatePicker @bind-Date="fromDate" Label="از تاریخ" />
+        <MudDatePicker @bind-Date="toDate" Label="تا تاریخ" />
+
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Load">فیلتر</MudButton>
+    </div>
+
+    @if (orders.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info">سفارشی یافت نشد.</MudAlert>
+    }
+    else
+    {
+        <div style="background: rgba(255,255,255,0.02); border-radius:16px; border:1px solid rgba(255,255,255,0.03); overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; min-width:800px;">
+                <thead style="background: rgba(255,215,0,0.05);">
+                    <tr>
+                        <th style="color:#FFD700; padding:16px; text-align:right;">شماره</th>
+                        <th style="color:#FFD700; padding:16px; text-align:right;">مشتری</th>
+                        <th style="color:#FFD700; padding:16px; text-align:right;">وضعیت</th>
+                        <th style="color:#FFD700; padding:16px; text-align:right;">جمع کل</th>
+                        <th style="color:#FFD700; padding:16px; text-align:right;">تاریخ</th>
+                        <th style="color:#FFD700; padding:16px; text-align:right;">عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var o in orders)
+                    {
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                            <td style="padding:16px; color:#FFD700;">@o.OrderNumber</td>
+                            <td style="padding:16px; color:rgba(255,255,255,0.85);">@o.CustomerName</td>
+                            <td style="padding:16px; color:rgba(255,255,255,0.85);">@StatusLabel(o.Status)</td>
+                            <td style="padding:16px; color:#FFD700;">@o.Total.ToString("N0") تومان</td>
+                            <td style="padding:16px; color:rgba(255,255,255,0.5);">@o.CreatedAt.ToString("yyyy/MM/dd HH:mm", culture)</td>
+                            <td style="padding:16px;">
+                                <MudIconButton Icon="@Icons.Material.Filled.Visibility" Color="Color.Info"
+                                               OnClick="@(() => Nav.NavigateTo($"/admin/orders/{o.OrderId}"))" />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    private CultureInfo culture = new("fa-IR");
+    private List<Order> orders = new();
+    private List<Branch> branches = new();
+    private long branchId;
+    private DateTime? fromDate;
+    private DateTime? toDate;
+
+    protected override void OnInitialized()
+    {
+        branches = BranchService.GetAll();
+        branchId = branches.FirstOrDefault()?.BranchId ?? 0;
+        Load();
+    }
+
+    private void Load()
+    {
+        if (branchId == 0) { orders = new(); return; }
+        orders = OrderService.GetByBranch(branchId, fromDate, toDate);
+    }
+
+    private static string StatusLabel(OrderStatus s) => s switch
+    {
+        OrderStatus.Draft => "پیش‌نویس",
+        OrderStatus.Submitted => "ثبت‌شده",
+        OrderStatus.Preparing => "در حال آماده‌سازی",
+        OrderStatus.Completed => "تکمیل‌شده",
+        OrderStatus.Cancelled => "لغو شده",
+        OrderStatus.Returned => "مرجوعی",
+        _ => "—"
+    };
+}

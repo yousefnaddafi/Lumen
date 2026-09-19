@@ -1,0 +1,41 @@
+﻿@page "/admin/login"
+@using Microsoft.AspNetCore.Identity
+@* No @rendermode - this page runs as static SSR *@
+@inject SignInManager<AppUser> SignInManager
+@inject NavigationManager Nav
+
+<div class="admin-login-container">
+    <div class="glass-card login-card">
+        <h1>☕ لومن | پنل مدیریت</h1>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="error-message">@errorMessage</div>
+        }
+
+        <form method="post" action="/admin/login-handler">
+            <div class="form-group">
+                <label>نام کاربری</label>
+                <input type="text" name="username" required />
+            </div>
+            <div class="form-group">
+                <label>رمز عبور</label>
+                <input type="password" name="password" required />
+            </div>
+            <button type="submit" class="btn-glass-primary">ورود به پنل مدیریت</button>
+        </form>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? Error { get; set; }
+
+    private string errorMessage = "";
+
+    protected override void OnInitialized()
+    {
+        if (Error == "invalid")
+            errorMessage = "نام کاربری یا رمز عبور اشتباه است";
+    }
+}

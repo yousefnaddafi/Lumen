@@ -112,7 +112,7 @@ namespace Lumen.Services.ProductServices
         }
         public List<Product> GetAll( long? productCategoryId, bool? isAvailable)
         {
-            var dbProducts = productRepository.GetQuery().ToList();
+            var dbProducts = productRepository.GetQuery().AsNoTracking().ToList();
 
             
             if (productCategoryId != null && productCategoryId != 0)

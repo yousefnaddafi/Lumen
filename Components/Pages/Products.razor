@@ -1,4 +1,5 @@
 ﻿@page "/admin/products"
+@attribute [Authorize(Roles = "Owner,MenuAdmin,BranchManager")]
 @using Lumen.Components.Pages.Dialogs
 @using Lumen.Models
 @using MudBlazor

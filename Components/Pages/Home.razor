@@ -1,4 +1,11 @@
 ﻿@page "/"
+@using Lumen.Components.Pages.Dialogs
+@using Lumen.Models
+@using Lumen.Services.ProductCatgoryServices
+@using Lumen.Services.ProductServices
+@inject IProductService ProductService;
+@inject IProductCategoryService CategoryService;
+@inject IJSRuntime JS
 <!DOCTYPE html>
 <html dir="rtl" lang="fa">
 <head>
@@ -98,34 +105,35 @@
         }
         /* Header - Video Background Section */
         header {
-            position: relative;
-            height: 70vh;
-            width: 100%;
-            overflow: hidden;
-        }
+    position: relative;
+    height: 70vh;
+    width: 100%;
+    overflow: hidden;
+    isolation: isolate; /* creates a clean stacking context just for the header */
+}
 
-            header video {
-                position: absolute;
-                top: 0;
-                left: 0;
-                min-width: 100%;
-                min-height: 100%;
-                object-fit: cover;
-                z-index: -1;
-                width: inherit;
-            }
+header video {
+    position: absolute;
+    inset: 0;               /* top/right/bottom/left: 0 */
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;             /* not -1 */
+    pointer-events: none;
+}
 
-        .hero-overlay {
-            position: relative;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 20px;
-        }
+.hero-overlay {
+    position: relative;
+    z-index: 1;             /* above the video */
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 20px;
+}
 
             .hero-overlay img.logo {
                 width: 150px;
@@ -272,11 +280,11 @@
             background-color: white;
             aspect-ratio: 7/3;
             /* flex: 1;
-                                    direction: rtl;
-                                    text-align: right;
-                                    img {
+                                            direction: rtl;
+                                            text-align: right;
+                                            img {
 
-                                    } */
+                                            } */
         }
 
         .menu-item-title {
@@ -333,28 +341,16 @@
 </head>
 <body>
     <!-- Hero Video Section -->
-    <header>
-        <video autoplay loop muted playsinline>
-            <source src="video/init.mp4" type="video/mp4">
-            مرورگر شما از تگ ویدیو پشتیبانی نمی‌کند.
-        </video>
-        <div class="hero-overlay">
-            <img src="img/MPLogo.png" alt="لوگوی لومِن" class="logo">
-            @* <h1>قهوه لومِن</h1>
-            <p class="tagline">جایی که هر جرعه، درخشش خاص خود را دارد</p> *@
-            <a class="insta-button" style="margin-top:30vh !important" href="https://www.instagram.com/lumen.caferoastery?igsh=OW5vc3d6dHNoN3Ry">
-                <i class="fa-brands fa-instagram" style="font-size: x-large;vertical-align: top;"></i>
-                follow us
-            </a>
-            @* <button style="color: white;padding:5px;border-radius:5px;width:30%;background-color: #FFBE98;font-weight:bold;box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.1);">follow us</button> *@
-        </div>
-    </header>
-
+    <HeroHeader/>
     <!-- Category Slider -->
     <div class="category-slider" style="padding-top:24px;padding-bottom:24px;box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);" id="categorySlider">
         <div class="category-container">
-            <div class="category-tag" data-target="hotcoffee">قهوه گرم <img src="img/hotcoffee.png" style="width:25px;float:left"></div>
-            <div class="category-tag" data-target="coldcoffee">قهوه سرد <img src="img/icecoffee.png" style="width:25px;float:left"></div>
+            @foreach(var cat in Categories)
+            {
+                <div class="category-tag" data-target="@cat.ProductCategoryId">@cat.Title </div>
+            }
+            
+            @* <div class="category-tag" data-target="coldcoffee">قهوه سرد <img src="img/icecoffee.png" style="width:25px;float:left"></div>
             <div class="category-tag" data-target="brewcoffee">قهوه دمی <img src="img/brewcoffee.png" style="width:25px;float:left"></div>
             <div class="category-tag" data-target="breakfast">صبحانه <img src="img/breakfast.png" style="width:25px;float:left"></div>
             <div class="category-tag" data-target="snack">میان وعده <img src="img/snack.png" style="width:25px;float:left"></div>
@@ -362,13 +358,144 @@
             <div class="category-tag" data-target="hotdrink">نوشیدنی گرم <img src="img/hotdrink.png" style="width:25px;float:left"></div>
             <div class="category-tag" data-target="shake">شیک <img src="img/shake.png" style="width:25px;float:left"></div>
             <div class="category-tag" data-target="smoothie">اسموتی <img src="img/smoothie.png" style="width:25px;float:left"></div>
-            <div class="category-tag" data-target="tea">چای دمنوش <img src="img/tea.png" style="width:25px;float:left"></div>
+            <div class="category-tag" data-target="tea">چای دمنوش <img src="img/tea.png" style="width:25px;float:left"></div> *@
         </div>
     </div>
 
     <!-- Menu Sections for each Category -->
     <div id="menu">
-        <!-- قهوه گرم Section -->
+
+        @foreach(var cat in Categories)
+        {
+            <section id="@cat.ProductCategoryId" class="menu-section">
+                <div class="menu-grid">
+                    @foreach(var product in Products.Where(z=>z.ProductCategoryId == cat.ProductCategoryId))
+                    {
+                        <div class="menu-card  item-wrapper container">
+                            <div class="menu-details">
+                                <div class="menu-item-title">@product.Title</div>
+                                <div class="menu-item-desc">@product.Description</div>
+                                <div class="menu-item-price">تجاری : @product.EcoPrice تومان</div>
+                                @if(product.BusinessPrice != null)
+                                {
+                                    <div class="menu-item-price">تخصصی : @product.BusinessPrice تومان</div>
+                                }
+                            </div>
+                            @if (string.IsNullOrEmpty(product.Image))
+                            {
+                                <img src="img/coffee.jpg" alt="@product.Title">
+                            }
+                            else
+                            {
+                                <img src="@product.Image" alt="@product.Title">
+                            }
+                            
+                        </div>
+                    }
+                    @* <div class="menu-card  item-wrapper container">
+                        <div class="menu-details">
+                            <div class="menu-item-title">اسپرسو</div>
+                            <div class="menu-item-desc">طعم اسپرسوی خالص و قوی.</div>
+                            <div class="menu-item-price">تجاری : 80 تومان</div>
+                            <div class="menu-item-price">تخصصی : 90 تومان</div>
+                        </div>
+                        <img src="img/Cropped/Espresso.jpg" alt="اسپرسو">
+                    </div>
+                    <div class="menu-card  item-wrapper container">
+                        <div class="menu-details">
+                            <div class="menu-item-title">اسپرسو کن پانا</div>
+                            <div class="menu-item-desc">شات قدرتمند از اسپرسوی غنی.</div>
+                            <div class="menu-item-price">تجاری : 98 تومان</div>
+                            <div class="menu-item-price">تخصصی : 109 تومان</div>
+                        </div>
+                        <img src="img/Cropped/CanPana.jpg" alt="اسپرسو کن پانا">
+                    </div>
+                    <div class="menu-card  item-wrapper container">
+                        <div class="menu-details">
+                            <div class="menu-item-title">اسپرسو چاکلت</div>
+                            <div class="menu-item-desc">تعادل عالی از قدرت و عطر.</div>
+                            <div class="menu-item-price">تجاری : 95 تومان</div>
+                            <div class="menu-item-price">تخصصی : 105 تومان</div>
+                        </div>
+                        <img src="img/cropped/EspressoChocolate.jpg" alt="اسپرسو چاکلت">
+                    </div>
+                    <div class="menu-card  item-wrapper container">
+                        <div class="menu-details">
+                            <div class="menu-item-title">آمریکانو</div>
+                            <div class="menu-item-desc">ملایم و غلیظ، مناسب دوستداران اصلی.</div>
+                            <div class="menu-item-price">تجاری : 80 تومان</div>
+                            <div class="menu-item-price">تخصصی : 90 تومان</div>
+                        </div>
+                        <img src="img/cropped/Americano.jpg" alt="آمریکانو">
+                    </div>
+                    <div class="menu-card  item-wrapper container">
+                        <div class="menu-details">
+                            <div class="menu-item-title">پیکولو</div>
+                            <div class="menu-item-desc">طعم عمیق و غنی برای انرژی فوری.</div>
+                            <div class="menu-item-price">تجاری : 98 تومان</div>
+                            <div class="menu-item-price">تخصصی : 108 تومان</div>
+                        </div>
+                        <img src="img/cropped/Cortado&Picolo.jpg" alt="پیکولو">
+                    </div>
+                    <div class="menu-card  item-wrapper container">
+                        <div class="menu-details">
+                            <div class="menu-item-title">کاپوچینو</div>
+                            <div class="menu-item-desc">طعم عمیق و غنی برای انرژی فوری.</div>
+                            <div class="menu-item-price">تجاری : 103 تومان</div>
+                            <div class="menu-item-price">تخصصی : 113 تومان</div>
+                        </div>
+                        <img src="img/coffee.jpg" alt="کاپوچینو">
+                    </div>
+                    <div class="menu-card  item-wrapper container">
+                        <div class="menu-details">
+                            <div class="menu-item-title">لاته</div>
+                            <div class="menu-item-desc">طعم عمیق و غنی برای انرژی فوری.</div>
+                            <div class="menu-item-price">تجاری : 106 تومان</div>
+                            <div class="menu-item-price">تخصصی : 116 تومان</div>
+                        </div>
+                        <img src="img/cropped/Latte.jpg" alt="لاته">
+                    </div>
+                    <div class="menu-card  item-wrapper container">
+                        <div class="menu-details">
+                            <div class="menu-item-title">کارامل ماکیاتو</div>
+                            <div class="menu-item-desc">طعم عمیق و غنی برای انرژی فوری.</div>
+                            <div class="menu-item-price">تجاری : 112 تومان</div>
+                            <div class="menu-item-price">تخصصی : 122 تومان</div>
+                        </div>
+                        <img src="img/cropped/caramelMakiatoMoka.jpg" alt="کارامل ماکیاتو">
+                    </div>
+                    <div class="menu-card  item-wrapper container">
+                        <div class="menu-details">
+                            <div class="menu-item-title">موکا</div>
+                            <div class="menu-item-desc">طعم عمیق و غنی برای انرژی فوری.</div>
+                            <div class="menu-item-price">تجاری : 112 تومان</div>
+                            <div class="menu-item-price">تخصصی : 122 تومان</div>
+                        </div>
+                        <img src="img/cropped/caramelMakiatoMoka.jpg" alt="موکا">
+                    </div>
+                    <div class="menu-card  item-wrapper container">
+                        <div class="menu-details">
+                            <div class="menu-item-title">کوکو چوکو</div>
+                            <div class="menu-item-desc">طعم عمیق و غنی برای انرژی فوری.</div>
+                            <div class="menu-item-price">تجاری : 117 تومان</div>
+                            <div class="menu-item-price">تخصصی : 127 تومان</div>
+                        </div>
+                        <img src="img/cropped/KokoChoko.jpg" alt="کوکو چوکو">
+                    </div>
+                    <div class="menu-card  item-wrapper container">
+                        <div class="menu-details">
+                            <div class="menu-item-title">سینمون دولچه لاته</div>
+                            <div class="menu-item-desc">طعم عمیق و غنی برای انرژی فوری.</div>
+                            <div class="menu-item-price">تجاری : 117 تومان</div>
+                            <div class="menu-item-price">تخصصی : 127 تومان</div>
+                        </div>
+                        <img src="img/coffee.jpg" alt="سینمون دولچه لاته">
+                    </div> *@
+                </div>
+            </section>
+        }
+
+       @*  <!-- قهوه گرم Section -->
         <section id="hotcoffee" class="menu-section">
             <div class="menu-grid">
 
@@ -895,7 +1022,7 @@
                     <img src="img/cropped/LumenTea.jpg" alt="دمنوش لومن">
                 </div>
             </div>
-        </section>
+        </section> *@
 
     </div>
     <!-- Footer -->
@@ -917,9 +1044,35 @@
 
     <!-- Scroll-to-Top Button (up arrow icon only) -->
     <button id="scrollToTop" style="background-color:#FFBE98"><img src="img/up.png" style="width:25px"></button>
+    @code {
+        public List<ProductCategory> Categories { get; set; } = new();
+        public List<Product> Products { get; set; } = new();
+        private bool _dataLoaded;
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            // Run after the dynamic DOM (categories/products) has been rendered
+            _dataLoaded = true;
 
+            // Defensive: wait until the global exists (max ~1s)
+            for (int i = 0; i < 20; i++)
+            {
+                var exists = await JS.InvokeAsync<bool>(
+                "eval", "typeof window.lumenMenu !== 'undefined'");
+                if (exists) break;
+                await Task.Delay(50);
+            }
+
+            await JS.InvokeVoidAsync("lumenMenu.init");
+        }
+
+        protected override async Task OnInitializedAsync()
+        {
+            Products = ProductService.GetAll(null, true);
+            Categories = CategoryService.GetAll(0, 0, null);
+        }
+    }
     <!-- JavaScript for Sticky Slider, Active Tag Highlighting & Auto-Scroll, and Scroll-to-Top -->
-    <script>
+  @*   <script>
 
                 window.addEventListener('resize', () => {
             observer.disconnect(); // Stop observing
@@ -997,6 +1150,6 @@
 
         document.querySelectorAll('.menu-section').forEach(section => observer.observe(section));
 
-    </script>
+    </script> *@
 </body>
 </html>

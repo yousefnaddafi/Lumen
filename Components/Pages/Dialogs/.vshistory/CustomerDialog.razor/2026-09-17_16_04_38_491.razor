@@ -1,0 +1,35 @@
+﻿@using Lumen.Models
+@using MudBlazor
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(IsEdit ? "ویرایش مشتری" : "مشتری جدید")</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="Customer.FullName" Label="نام و نام خانوادگی" Required="true" />
+        <MudTextField @bind-Value="Customer.PhoneNumber" Label="شماره موبایل" Required="true" />
+        <MudCheckBox T="bool" @bind-Value="Customer.IsBusiness" Label="مشتری تجاری" />
+        <MudTextField @bind-Value="Customer.Note" Label="یادداشت (اختیاری)" Lines="2" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">انصراف</MudButton>
+        <MudButton Color="Color.Warning" Variant="Variant.Filled" OnClick="Save">ذخیره</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public Customer Customer { get; set; } = new();
+    [Parameter] public bool IsEdit { get; set; }
+    [Parameter] public bool IsMobile { get; set; }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        if (string.IsNullOrWhiteSpace(Customer.FullName) ||
+            string.IsNullOrWhiteSpace(Customer.PhoneNumber))
+            return;
+        MudDialog.Close(DialogResult.Ok(Customer));
+    }
+}

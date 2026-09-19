@@ -1,0 +1,18 @@
+﻿namespace Lumen.Models
+{
+    public class BranchInventory : BaseEntity
+    {
+        public long BranchInventoryId { get; set; }
+        public long BranchId { get; set; }
+        public long ProductId { get; set; }
+
+        public decimal QuantityOnHand { get; set; }      // current stock
+        public decimal ReorderLevel { get; set; }        // warning threshold
+        public decimal? MaxStock { get; set; }           // optional
+
+        public DateTime LastUpdated { get; set; }
+
+        public Branch Branch { get; set; }
+        public Product Product { get; set; }
+    }
+}

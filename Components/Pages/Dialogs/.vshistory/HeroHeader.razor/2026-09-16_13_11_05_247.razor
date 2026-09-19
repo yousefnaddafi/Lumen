@@ -1,0 +1,64 @@
+﻿<header>
+    <video autoplay loop muted playsinline preload="auto">
+        <source src="video/init.mp4" type="video/mp4">
+        مرورگر شما از تگ ویدیو پشتیبانی نمی‌کند.
+    </video>
+    <div class="hero-overlay">
+        <img src="/img/MPLogo.png" alt="لوگوی لومِن" class="logo">
+        <a class="insta-button" style="margin-top:30vh !important"
+           href="https://www.instagram.com/lumen.caferoastery?igsh=OW5vc3d6dHNoN3Ry">
+            <i class="fa-brands fa-instagram" style="font-size: x-large;vertical-align: top;"></i>
+            follow us
+        </a>
+    </div>
+</header>
+
+
+<style>
+    header {
+        position: relative;
+        height: 70vh;
+        width: 100%;
+        overflow: hidden;
+    }
+
+        header video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            min-width: 100%;
+            min-height: 100%;
+            object-fit: cover;
+            z-index: -1;
+            width: inherit;
+        }
+
+    .hero-overlay {
+        position: relative;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        background: rgba(0, 0, 0, 0.3);
+        padding: 20px;
+    }
+
+        .hero-overlay img.logo {
+            width: 150px;
+            margin-bottom: 20px;
+        }
+
+        .hero-overlay h1 {
+            font-size: 3em;
+            color: #fff;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .hero-overlay p.tagline {
+            font-size: 1.2em;
+            color: #f5f5f5;
+        }
+</style>

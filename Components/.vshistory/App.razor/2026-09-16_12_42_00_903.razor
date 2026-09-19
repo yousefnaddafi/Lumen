@@ -1,0 +1,55 @@
+﻿<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>پنل لومن</title>
+    <base href="/" />
+    <ResourcePreloader />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" />
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="@Assets["lib/bootstrap/dist/css/bootstrap.min.css"]" />
+    <link rel="stylesheet" href="@Assets["app.css"]" />
+    <link rel="stylesheet" href="css/admin.css" />
+    <link rel="stylesheet" href="@Assets["Lumen.styles.css"]" />
+    <ImportMap />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <HeadOutlet @rendermode="InteractiveServer" />
+</head>
+
+<body>
+    <Routes @rendermode="InteractiveServer" />
+    @* <component type="typeof(App)" render-mode="ServerPrerendered" /> *@
+    <div id="blazor-error-ui">
+        <environment include="Staging,Production">
+            An error has occurred. This application may no longer respond until reloaded.
+        </environment>
+        <environment include="Development">
+            An unhandled exception has occurred. See browser dev tools for details.
+        </environment>
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
+    <script src="~/js/main.js"> </script>
+    <script src="~/js/menu.js"></script>
+    <script src="_framework/blazor.web.js"></script>
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+    <script>
+        // Force reconnection if Blazor disconnects
+        Blazor.start({
+            reconnectionOptions: {
+                maxRetries: 30,
+                retryIntervalMilliseconds: 2000,
+            },
+            configureSignalR: function (builder) {
+                builder.withUrl("/_blazor", {
+                    transport: 1 // WebSockets only
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

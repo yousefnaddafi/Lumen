@@ -1,0 +1,154 @@
+﻿@page "/admin/customers"
+@attribute [Authorize(Roles = "Owner,BranchManager,Cashier")]
+@rendermode InteractiveServer
+@layout Components.Layout.AdminLayout
+@using Lumen.Components.Pages.Dialogs
+@using Lumen.Models
+@using Lumen.Services.CustomerServices
+@using MudBlazor
+@using System.Globalization
+@inject ICustomerService CustomerService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
+
+<PageTitle>مشتریان - پنل قهوه</PageTitle>
+
+<div style="width: 100%;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+        <div>
+            <h3 style="margin: 0; background: linear-gradient(135deg, #FFD700, #FFB800); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 28px; font-weight: 700;">
+                👤 مشتریان
+            </h3>
+            <p style="color: rgba(255,255,255,0.4); margin: 4px 0 0 0; font-size: 14px;">مدیریت مشتریان ثبت‌شده</p>
+        </div>
+        <MudButton Class="glass-btn" OnClick="@(async () => await OpenDialog(null))">
+            + افزودن مشتری جدید
+        </MudButton>
+    </div>
+
+    <div style="display: flex; gap: 12px; margin-bottom: 24px;">
+        <input @bind="searchString" @bind:event="oninput"
+               placeholder="جستجو بر اساس نام یا شماره موبایل..."
+               style="width: 100%; max-width: 360px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,215,0,0.12); border-radius: 12px; color: #fff; padding: 12px 16px; outline: none;" />
+    </div>
+
+    @if (Filtered.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info">هیچ مشتری‌ای یافت نشد.</MudAlert>
+    }
+    else if (isMobile)
+    {
+        <div style="display: grid; grid-template-columns: 1fr; gap: 16px;">
+            @foreach (var c in Filtered)
+            {
+                <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,215,0,0.08); border-radius: 16px; padding: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <strong style="color:#FFD700;">@c.FullName</strong>
+                        <span style="color: rgba(255,255,255,0.5);">@c.PhoneNumber</span>
+                    </div>
+                    <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px;">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Warning" OnClick="@(() => OpenDialog(c))" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => DeleteCustomer(c))" />
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div style="background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px solid rgba(255,255,255,0.03); overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; min-width: 700px;">
+                <thead style="background: rgba(255,215,0,0.05);">
+                    <tr>
+                        <th style="color:#FFD700; padding:16px; text-align:right;">نام</th>
+                        <th style="color:#FFD700; padding:16px; text-align:right;">شماره موبایل</th>
+                        <th style="color:#FFD700; padding:16px; text-align:right;">نوع</th>
+                        <th style="color:#FFD700; padding:16px; text-align:right;">تاریخ ایجاد</th>
+                        <th style="color:#FFD700; padding:16px; text-align:right;">عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Filtered)
+                    {
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                            <td style="padding:16px; color:rgba(255,255,255,0.85);">@c.FullName</td>
+                            <td style="padding:16px; color:rgba(255,255,255,0.7);">@c.PhoneNumber</td>
+                            <td style="padding:16px; color:rgba(255,255,255,0.7);">@(c.IsBusiness ? "تجاری" : "اقتصادی")</td>
+                            <td style="padding:16px; color:rgba(255,255,255,0.5);">@c.CreatedAt.ToString("yyyy/MM/dd", culture)</td>
+                            <td style="padding:16px;">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Warning" OnClick="@(() => OpenDialog(c))" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => DeleteCustomer(c))" />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    private CultureInfo culture = new("fa-IR");
+    private List<Customer> customers = new();
+    private string searchString = "";
+    private bool isMobile;
+
+    private List<Customer> Filtered =>
+        string.IsNullOrEmpty(searchString)
+            ? customers
+            : customers.Where(c =>
+                c.FullName.Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
+                c.PhoneNumber.Contains(searchString)).ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Load();
+        await CheckScreen();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) { await CheckScreen(); StateHasChanged(); }
+    }
+
+    private async Task CheckScreen()
+    {
+        try { isMobile = await JSRuntime.InvokeAsync<int>("window.innerWidth") <= 768; }
+        catch { isMobile = false; }
+    }
+
+    private void Load() => customers = CustomerService.GetAll();
+
+    private async Task OpenDialog(Customer? current)
+    {
+        var parameters = new DialogParameters
+        {
+            ["Customer"] = current ?? new Customer(),
+            ["IsEdit"] = current != null,
+            ["IsMobile"] = isMobile
+        };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false,Position=DialogPosition.Center };
+        var dialog = await DialogService.ShowAsync<CustomerDialog>("", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data is Customer c)
+        {
+            if (c.CustomerId == 0) CustomerService.Create(c);
+            else CustomerService.Update(c);
+            Load();
+            Snackbar.Add(current == null ? "مشتری ایجاد شد" : "مشتری بروزرسانی شد", Severity.Success);
+        }
+    }
+
+    private async Task DeleteCustomer(Customer c)
+    {
+        var ok = await DialogService.ShowMessageBoxAsync("حذف مشتری", $"حذف '{c.FullName}'؟", "حذف", "انصراف");
+        if (ok == true)
+        {
+            await CustomerService.Delete(c.CustomerId);
+            Load();
+            Snackbar.Add("حذف شد", Severity.Success);
+        }
+    }
+}

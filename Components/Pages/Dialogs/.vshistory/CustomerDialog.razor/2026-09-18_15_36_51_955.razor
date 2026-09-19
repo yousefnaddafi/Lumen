@@ -1,0 +1,187 @@
+﻿@using Lumen.Models
+@using MudBlazor
+@rendermode InteractiveServer
+
+<MudDialog Class="glass-dialog" Style="background: rgba(20,20,20,0.95) !important; backdrop-filter: blur(20px) !important; border: 1px solid rgba(255,215,0,0.12) !important; border-radius: 24px !important;">
+    <TitleContent>
+        <div style="display: flex; align-items: center; gap: 14px; padding: 8px 0;">
+            <div style="width: 48px; height: 48px; background: rgba(255,215,0,0.08); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+                <MudIcon Icon="@Icons.Material.TwoTone.Person"></MudIcon>
+            </div>
+            <div>
+                <span style="color: #fff; font-weight: 700; font-size: 22px; font-family: 'Vazirmatn', sans-serif; display: block;">
+                    @(IsEdit ? "ویرایش مشتری" : "مشتری جدید")
+                </span>
+                <span style="color: rgba(255,255,255,0.3); font-size: 13px; font-family: 'Vazirmatn', sans-serif; display: block;">
+                    @(IsEdit ? "اطلاعات مشتری را ویرایش کنید" : "یک مشتری جدید ایجاد کنید")
+                </span>
+            </div>
+        </div>
+    </TitleContent>
+
+    <DialogContent>
+        <div style="display: grid; grid-template-columns: 1fr; gap: 20px; padding: 12px 0; font-family: 'Vazirmatn', sans-serif;">
+            <div>
+                <label style="color: rgba(255,255,255,0.5); font-size: 14px; display: block; margin-bottom: 8px; font-weight: 500;">
+                    نام و نام خانوادگی <span style="color: #FFD700;">*</span>
+                </label>
+                <div style="position: relative;">
+                    <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: rgba(255,215,0,0.4); font-size: 18px;">
+                        <MudIcon Icon="@Icons.Material.TwoTone.Person"></MudIcon>
+                    </span>
+                    <input @bind="Customer.FullName"
+                           placeholder="مثلاً: محمد محمدی"
+                           style="width: 100%; background: rgba(255,255,255,0.05); border: 2px solid rgba(255,215,0,0.12); border-radius: 12px; color: #fff; padding: 12px 48px 12px 16px; font-family: 'Vazirmatn', sans-serif; font-size: 15px; outline: none; transition: all 0.3s ease;"
+                           @onfocus="() => { }"
+                           @onblur="() => { }" />
+                </div>
+                <div style="margin-top: 6px; color: rgba(255,255,255,0.2); font-size: 12px;">
+                    یک نام منحصر‌به‌فرد برای دسته‌بندی انتخاب کنید
+                </div>
+            </div>
+        </div>
+    </DialogContent>
+
+    <DialogActions>
+        <div style="display: flex; gap: 12px; width: 100%; padding: 8px 0; font-family: 'Vazirmatn', sans-serif; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 16px;">
+            <button class="glass-btn-outline" @onclick="Cancel"
+                    style="flex: 1; padding: 12px 24px; border: 2px solid #FFD700; background: transparent; color: #FFD700; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-family: 'Vazirmatn', sans-serif; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                انصراف
+            </button>
+            <button class="glass-btn" @onclick="Save"
+                    style="flex: 1; padding: 12px 24px; background: linear-gradient(135deg, #FFD700 0%, #FFB800 100%); color: #1a1a1a; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 20px rgba(255,215,0,0.2); font-family: 'Vazirmatn', sans-serif; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                @(IsEdit ? "بروزرسانی" : "ایجاد")
+            </button>
+        </div>
+    </DialogActions>
+</MudDialog>
+
+
+
+
+<MudDialog Class="glass-dialog" Style="background: rgba(20,20,20,0.95) !important;color:white !important; backdrop-filter: blur(20px) !important;  border-radius: 24px !important;">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(IsEdit ? "ویرایش مشتری" : "مشتری جدید")</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudInput   @bind-Value="Customer.FullName"  Label="نام و نام خانوادگی" Required="true" />
+        <MudTextField  @bind-Value="Customer.PhoneNumber" Label="شماره موبایل" Required="true" />
+        <MudCheckBox  T="bool" @bind-Value="Customer.IsBusiness" Label="مشتری تجاری" />
+        <MudTextField  @bind-Value="Customer.Note" Label="یادداشت (اختیاری)" Lines="2" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">انصراف</MudButton>
+        <MudButton Color="Color.Warning" Variant="Variant.Filled" OnClick="Save">ذخیره</MudButton>
+    </DialogActions>
+</MudDialog>
+<style>
+    /* Glass Dialog Styles */
+    .glass-dialog .mud-dialog-container {
+        background: rgba(0, 0, 0, 0.6) !important;
+        backdrop-filter: blur(8px) !important;
+    }
+
+    .glass-dialog .mud-paper {
+        background: rgba(20, 20, 20, 0.95) !important;
+        backdrop-filter: blur(20px) !important;
+        border: 1px solid rgba(255, 215, 0, 0.12) !important;
+        border-radius: 24px !important;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6) !important;
+        padding: 8px !important;
+        max-width: 500px !important;
+    }
+
+    .glass-dialog .mud-dialog-title {
+        color: #fff !important;
+        padding: 16px 24px !important;
+    }
+
+    .glass-dialog .mud-dialog-content {
+        padding: 8px 24px 16px 24px !important;
+    }
+
+    .glass-dialog .mud-dialog-actions {
+        padding: 8px 24px 24px 24px !important;
+    }
+
+    /* Input focus styles */
+    .glass-dialog input:focus {
+        border-color: #FFD700 !important;
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.05) !important;
+    }
+
+    /* Button hover effects */
+    .glass-dialog .glass-btn-outline:hover {
+        background: rgba(255, 215, 0, 0.05) !important;
+        transform: scale(1.02) !important;
+    }
+
+    .glass-dialog .glass-btn:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 30px rgba(255, 215, 0, 0.3) !important;
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .glass-dialog .mud-paper {
+            margin: 16px !important;
+            border-radius: 20px !important;
+            max-width: 100% !important;
+        }
+
+        .glass-dialog .mud-dialog-content {
+            padding: 8px 16px 16px 16px !important;
+        }
+
+        .glass-dialog .mud-dialog-actions {
+            padding: 8px 16px 20px 16px !important;
+        }
+
+        .glass-dialog .glass-btn,
+        .glass-dialog .glass-btn-outline {
+            font-size: 14px !important;
+            padding: 10px 16px !important;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .glass-dialog .mud-paper {
+            margin: 8px !important;
+            border-radius: 16px !important;
+        }
+
+        .glass-dialog .mud-dialog-content {
+            padding: 8px 12px 12px 12px !important;
+        }
+
+        .glass-dialog .mud-dialog-actions {
+            padding: 8px 12px 16px 12px !important;
+            flex-direction: column-reverse !important;
+        }
+
+        .glass-dialog .glass-btn,
+        .glass-dialog .glass-btn-outline {
+            width: 100% !important;
+            flex: none !important;
+        }
+    }
+</style>
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public Customer Customer { get; set; } = new();
+    [Parameter] public bool IsEdit { get; set; }
+    [Parameter] public bool IsMobile { get; set; }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        if (string.IsNullOrWhiteSpace(Customer.FullName) ||
+            string.IsNullOrWhiteSpace(Customer.PhoneNumber))
+            return;
+        MudDialog.Close(DialogResult.Ok(Customer));
+    }
+}

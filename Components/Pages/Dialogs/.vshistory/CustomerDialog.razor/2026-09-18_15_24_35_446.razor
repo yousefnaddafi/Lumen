@@ -1,0 +1,128 @@
+﻿@using Lumen.Models
+@using MudBlazor
+@rendermode InteractiveServer
+
+<MudDialog Class="glass-dialog" Style="background: rgba(20,20,20,0.95) !important; backdrop-filter: blur(20px) !important; border: 1px solid rgba(255,215,0,0.12) !important; border-radius: 24px !important;">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(IsEdit ? "ویرایش مشتری" : "مشتری جدید")</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField Style="color: rgba(255,255,255,0.5); font-size: 14px; display: block; margin-bottom: 8px; font-weight: 500;" @bind-Value="Customer.FullName" Label="نام و نام خانوادگی" Required="true" />
+        <MudTextField @bind-Value="Customer.PhoneNumber" Label="شماره موبایل" Required="true" />
+        <MudCheckBox T="bool" @bind-Value="Customer.IsBusiness" Label="مشتری تجاری" />
+        <MudTextField @bind-Value="Customer.Note" Label="یادداشت (اختیاری)" Lines="2" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">انصراف</MudButton>
+        <MudButton Color="Color.Warning" Variant="Variant.Filled" OnClick="Save">ذخیره</MudButton>
+    </DialogActions>
+</MudDialog>
+<style>
+    /* Glass Dialog Styles */
+    .glass-dialog .mud-dialog-container {
+        background: rgba(0, 0, 0, 0.6) !important;
+        backdrop-filter: blur(8px) !important;
+    }
+
+    .glass-dialog .mud-paper {
+        background: rgba(20, 20, 20, 0.95) !important;
+        backdrop-filter: blur(20px) !important;
+        border: 1px solid rgba(255, 215, 0, 0.12) !important;
+        border-radius: 24px !important;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6) !important;
+        padding: 8px !important;
+        max-width: 500px !important;
+    }
+
+    .glass-dialog .mud-dialog-title {
+        color: #fff !important;
+        padding: 16px 24px !important;
+    }
+
+    .glass-dialog .mud-dialog-content {
+        padding: 8px 24px 16px 24px !important;
+    }
+
+    .glass-dialog .mud-dialog-actions {
+        padding: 8px 24px 24px 24px !important;
+    }
+
+    /* Input focus styles */
+    .glass-dialog input:focus {
+        border-color: #FFD700 !important;
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.05) !important;
+    }
+
+    /* Button hover effects */
+    .glass-dialog .glass-btn-outline:hover {
+        background: rgba(255, 215, 0, 0.05) !important;
+        transform: scale(1.02) !important;
+    }
+
+    .glass-dialog .glass-btn:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 30px rgba(255, 215, 0, 0.3) !important;
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .glass-dialog .mud-paper {
+            margin: 16px !important;
+            border-radius: 20px !important;
+            max-width: 100% !important;
+        }
+
+        .glass-dialog .mud-dialog-content {
+            padding: 8px 16px 16px 16px !important;
+        }
+
+        .glass-dialog .mud-dialog-actions {
+            padding: 8px 16px 20px 16px !important;
+        }
+
+        .glass-dialog .glass-btn,
+        .glass-dialog .glass-btn-outline {
+            font-size: 14px !important;
+            padding: 10px 16px !important;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .glass-dialog .mud-paper {
+            margin: 8px !important;
+            border-radius: 16px !important;
+        }
+
+        .glass-dialog .mud-dialog-content {
+            padding: 8px 12px 12px 12px !important;
+        }
+
+        .glass-dialog .mud-dialog-actions {
+            padding: 8px 12px 16px 12px !important;
+            flex-direction: column-reverse !important;
+        }
+
+        .glass-dialog .glass-btn,
+        .glass-dialog .glass-btn-outline {
+            width: 100% !important;
+            flex: none !important;
+        }
+    }
+</style>
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public Customer Customer { get; set; } = new();
+    [Parameter] public bool IsEdit { get; set; }
+    [Parameter] public bool IsMobile { get; set; }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        if (string.IsNullOrWhiteSpace(Customer.FullName) ||
+            string.IsNullOrWhiteSpace(Customer.PhoneNumber))
+            return;
+        MudDialog.Close(DialogResult.Ok(Customer));
+    }
+}

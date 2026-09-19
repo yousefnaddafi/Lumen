@@ -1,9 +1,14 @@
 ﻿@inherits LayoutComponentBase
 @inject NavigationManager NavigationManager
+@using Lumen.Models
+@using Microsoft.AspNetCore.Identity
 @using MudBlazor
 @rendermode InteractiveServer
 @using Microsoft.JSInterop
 @inject IJSRuntime JSRuntime
+@inject SignInManager<AppUser> SignInManager
+@inject AuthenticationStateProvider AuthProvider
+@inject CurrentUserState UserState
 
 <MudThemeProvider />
 <MudSnackbarProvider />
@@ -39,6 +44,15 @@
                    @onclick="CloseSidebar">
                     📂 دسته‌بندی‌ها
                 </a>
+                <a href="/admin/customers" class="nav-link @(IsActive("/admin/customers") ? "active" : "")" @onclick="CloseSidebar">
+                    👤 مشتریان
+                </a>
+                <a href="/admin/orders" class="nav-link @(IsActive("/admin/orders") ? "active" : "")" @onclick="CloseSidebar">
+                    🧾 سفارشات
+                </a>
+                <MudButton OnClick="Logout" Variant="Variant.Text" Color="Color.Warning">
+                    خروج
+                </MudButton>
             </div>
         </div>
 
@@ -432,7 +446,11 @@
             isMobileOpen = true;
         }
     }
-
+    private async Task Logout()
+    {
+        await SignInManager.SignOutAsync();
+        NavigationManager.NavigateTo("/admin/login", forceLoad: true);
+    }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender && !isJSInitialized)
@@ -538,6 +556,8 @@
         var uri = NavigationManager.Uri;
         if (uri.Contains("/products")) return "مدیریت محصولات";
         if (uri.Contains("/categories")) return "مدیریت دسته‌بندی‌ها";
+        if (uri.Contains("/customers")) return "مدیریت مشتریان";
+        if (uri.Contains("/orders/new")) return "سفارش جدید";
         if (uri.Contains("/orders")) return "مدیریت سفارشات";
         if (uri.Contains("/users")) return "مدیریت کاربران";
         if (uri.Contains("/settings")) return "تنظیمات";

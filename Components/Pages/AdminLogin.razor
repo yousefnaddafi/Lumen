@@ -1,7 +1,13 @@
 ﻿@page "/admin/login"
-@rendermode InteractiveServer
+@* @rendermode InteractiveServer *@
+@using Lumen.Models
+@using Microsoft.AspNetCore.Identity
 @using MudBlazor
 @inject NavigationManager NavigationManager
+@inject SignInManager<AppUser> SignInManager
+@inject UserManager<AppUser> UserManager
+@inject AuthenticationStateProvider AuthProvider
+@inject CurrentUserState UserState
  
 <div class="admin-login-container">
     <div class="glass-card login-card">
@@ -10,7 +16,46 @@
             <p>به پنل مدیریت منوی کافه لومن خوش آمدید</p>
         </div>
 
-        <div class="form-group">
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="error-message">@errorMessage</div>
+        }
+
+        <form method="post" action="/admin/login-handler">
+            <div class="form-group">
+                <label>نام کاربری</label>
+                <MudTextField @bind-Value="username"
+                              Class="glass-input"
+                              Placeholder="نام کاربری خود را وارد کنید"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              required="true"
+                              InputType="InputType.Text"
+                              Style="color: #fff;"
+                              name="username"
+                              InputClass="glass-input" />
+                @* <input type="text" name="username" required /> *@
+            </div>
+            <div class="form-group">
+                <label>رمز عبور</label>
+                <MudTextField @bind-Value="password"
+                              Class="glass-input"
+                              Placeholder="رمز عبور خود را وارد کنید"
+                              InputType="InputType.Password"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Style="color: #fff;"
+                              Required ="true"
+                              name="password"
+                              InputClass="glass-input" />
+                @* <input type="password" name="password" required /> *@
+            </div>
+            <button type="submit" class="btn-glass-primary">ورود به پنل مدیریت</button>
+        </form>
+
+
+
+        @* <div class="form-group">
             <label>نام کاربری</label>
             <MudTextField @bind-Value="username"
                           Class="glass-input"
@@ -46,7 +91,7 @@
                    Class="btn-glass-primary"
                    Style="margin-top: 8px;">
             ورود به پنل مدیریت
-        </MudButton>
+        </MudButton> *@
     </div>
 </div>
 
@@ -177,6 +222,59 @@
     private string? username = string.Empty;
     private string? password = string.Empty;
     private string errorMessage = "";
+    private bool isBusy;
+
+    private async Task HandleLogin()
+    {
+        if (isBusy) return;
+        isBusy = true;
+        errorMessage = "";
+
+        try
+        {
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+            {
+                errorMessage = "نام کاربری و رمز عبور را وارد کنید";
+                return;
+            }
+
+            // Identity uses UserName or Email. We pass UserName.
+            var result = await SignInManager.PasswordSignInAsync(
+                userName: username!,
+                password: password!,
+                isPersistent: true,
+                lockoutOnFailure: true);
+
+            if (result.Succeeded)
+            {
+                NavigationManager.NavigateTo("/admin/products", forceLoad: false);
+                return;
+            }
+
+            if (result.IsLockedOut)
+                errorMessage = "حساب کاربری موقتاً قفل شده است. لطفاً بعداً تلاش کنید.";
+            else if (result.IsNotAllowed)
+                errorMessage = "ورود برای این حساب مجاز نیست.";
+            else
+                errorMessage = "نام کاربری یا رمز عبور اشتباه است";
+
+            password = "";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "خطای غیرمنتظره در ورود";
+            Console.WriteLine(ex);
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+}
+@* @code {
+    private string? username = string.Empty;
+    private string? password = string.Empty;
+    private string errorMessage = "";
 
 
     // private LoginModel loginModel = new();
@@ -203,4 +301,4 @@
         public string? Username { get; set; }
         public string? Password { get; set; }
     }
-}
+} *@

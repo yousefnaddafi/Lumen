@@ -61,22 +61,51 @@
 
 
 
-<MudDialog Class="glass-dialog" >
+<MudDialog Class="glass-dialog">
     <TitleContent>
-        <MudText Typo="Typo.h6">@(IsEdit ? "ویرایش مشتری" : "مشتری جدید")</MudText>
+        <MudText Typo="Typo.h6" Style="color:#FFD700; font-weight:700;">
+            @(IsEdit ? "ویرایش مشتری" : "مشتری جدید")
+        </MudText>
     </TitleContent>
+
     <DialogContent>
-        <MudTextField   @bind-Value="Customer.FullName"  Label="نام و نام خانوادگی" Required="true" />
-        <MudTextField  @bind-Value="Customer.PhoneNumber" Label="شماره موبایل" Required="true" />
-        <MudCheckBox  T="bool" @bind-Value="Customer.IsBusiness" Label="مشتری تجاری" />
-        <MudTextField  @bind-Value="Customer.Note" Label="یادداشت (اختیاری)" Lines="2" />
+        <MudStack Spacing="3">
+            <MudTextField T="string"
+                          @bind-Value="Customer.FullName"
+                          Label="نام و نام خانوادگی"
+                          Variant="Variant.Outlined"
+                          Required="true"
+                          RequiredError="نام مشتری الزامی است"
+                          Margin="Margin.Dense" />
+
+            <MudTextField T="string"
+                          @bind-Value="Customer.PhoneNumber"
+                          Label="شماره موبایل"
+                          Variant="Variant.Outlined"
+                          Required="true"
+                          RequiredError="شماره موبایل الزامی است"
+                          Margin="Margin.Dense" />
+
+            <MudCheckBox T="bool"
+                         @bind-Value="Customer.IsBusiness"
+                         Label="مشتری تجاری"
+                         Color="Color.Warning" />
+
+            <MudTextField T="string"
+                          @bind-Value="Customer.Note"
+                          Label="یادداشت (اختیاری)"
+                          Variant="Variant.Outlined"
+                          Lines="3"
+                          Margin="Margin.Dense" />
+        </MudStack>
     </DialogContent>
+
     <DialogActions>
-        <MudButton OnClick="Cancel">انصراف</MudButton>
-        <MudButton Color="Color.Warning" Variant="Variant.Filled" OnClick="Save">ذخیره</MudButton>
+        <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="Cancel">انصراف</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="Save">ذخیره</MudButton>
     </DialogActions>
 </MudDialog>
-<style>
+@* <style>
     /* Glass Dialog Styles */
     .glass-dialog .mud-dialog-container {
         background: rgba(0, 0, 0, 0.6) !important;
@@ -167,7 +196,7 @@
             flex: none !important;
         }
     }
-</style>`
+</style>` *@
 @code {
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = default!;

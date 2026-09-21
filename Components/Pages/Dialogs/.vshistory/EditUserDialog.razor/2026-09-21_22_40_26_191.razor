@@ -1,0 +1,153 @@
+﻿@using Lumen.InfraStructure
+@using Lumen.Models
+@using Lumen.Models.Dtos
+@using Lumen.Services.UserServices
+@using Microsoft.EntityFrameworkCore
+@using MudBlazor
+
+@inject IUserAdminService UserService
+@inject ProjectDBContext Db
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6" Style="color:#FFD700; font-weight:700;">ویرایش کاربر</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudTextField T="string" @bind-Value="dto.FullName"
+                          Label="نام و نام خانوادگی"
+                          Variant="Variant.Outlined" Margin="Margin.Dense" />
+
+            <MudTextField T="string" @bind-Value="dto.PhoneNumber"
+                          Label="شماره موبایل"
+                          Variant="Variant.Outlined" Margin="Margin.Dense" />
+
+            <MudDivider Class="my-2" />
+            <div style="color:#FFD700; font-weight:600; font-size:14px;">نقش‌ها</div>
+            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                @foreach (var role in roles)
+                {
+                    var r = role;
+                    var isChecked = dto.Roles.Contains(r.Name!);
+                    <MudChip T="string"
+                             Color="@(isChecked ? Color.Warning : Color.Default)"
+                             Variant="@(isChecked ? Variant.Filled : Variant.Outlined)"
+                             OnClick="@(() => ToggleRole(r.Name!))"
+                             Style="cursor:pointer;">
+                        @RoleLabel(r.Name!)
+                    </MudChip>
+                }
+            </div>
+
+            <MudDivider Class="my-2" />
+            <div style="color:#FFD700; font-weight:600; font-size:14px;">شعبه‌ها</div>
+            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                @foreach (var b in branches)
+                {
+                    var br = b;
+                    var isChecked = dto.BranchIds.Contains(br.BranchId);
+                    <MudChip T="string"
+                             Color="@(isChecked ? Color.Success : Color.Default)"
+                             Variant="@(isChecked ? Variant.Filled : Variant.Outlined)"
+                             OnClick="@(() => ToggleBranch(br.BranchId))"
+                             Style="cursor:pointer;">
+                        @br.Title
+                    </MudChip>
+                }
+            </div>
+
+            <MudCheckBox T="bool" @bind-Value="dto.IsActive"
+                         Label="فعال" Color="Color.Warning" Dense="true" />
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true">@errorMessage</MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Variant="Variant.Text" OnClick="Cancel">انصراف</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Warning"
+                   OnClick="Save" Disabled="@saving">
+            @(saving ? "..." : "ذخیره")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public string UserId { get; set; } = "";
+    [Parameter] public List<string> InitialRoles { get; set; } = new();
+    [Parameter] public List<long> InitialBranchIds { get; set; } = new();
+
+    private UpdateUserDto dto = new();
+    private List<AppRole> roles = new();
+    private List<Branch> branches = new();
+    private string errorMessage = "";
+    private bool saving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        roles = await UserService.GetAllRolesAsync();
+        branches = await Db.Branches.Where(b => !b.IsDeleted).OrderBy(b => b.Title).ToListAsync();
+
+        dto = new UpdateUserDto
+        {
+            UserId = UserId,
+            Roles = new List<string>(InitialRoles),
+            BranchIds = new List<long>(InitialBranchIds)
+        };
+
+        // Load full name / phone / IsActive from DB
+        var user = await Db.Users.FirstOrDefaultAsync(u => u.Id == UserId);
+        if (user != null)
+        {
+            dto.FullName = user.FullName;
+            dto.PhoneNumber = user.PhoneNumber;
+            dto.IsActive = user.IsActive;
+        }
+    }
+
+    private void ToggleRole(string name)
+    {
+        if (dto.Roles.Contains(name)) dto.Roles.Remove(name);
+        else dto.Roles.Add(name);
+    }
+
+    private void ToggleBranch(long id)
+    {
+        if (dto.BranchIds.Contains(id)) dto.BranchIds.Remove(id);
+        else dto.BranchIds.Add(id);
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Save()
+    {
+        errorMessage = "";
+        saving = true;
+        var result = await UserService.UpdateAsync(dto);
+        saving = false;
+
+        if (!result.Succeeded)
+        {
+            errorMessage = string.Join(" • ", result.Errors.Select(e => e.Description));
+            return;
+        }
+
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private static string RoleLabel(string role) => role switch
+    {
+        "Owner" => "مدیر",
+        "BranchManager" => "مدیر شعبه",
+        "Cashier" => "صندوق‌دار",
+        "Barista" => "باریستا",
+        "Accountant" => "حسابدار",
+        "MenuAdmin" => "مدیر منو",
+        _ => role
+    };
+}

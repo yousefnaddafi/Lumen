@@ -12,6 +12,7 @@
         public bool IsActive { get; set; }
         public DateTime CreateDate { get; set; }
         public List<string> Roles { get; set; } = new();
+        public List<long> BranchIds { get; set; } = new();
         public List<string> BranchNames { get; set; } = new();
     }
 

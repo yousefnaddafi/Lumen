@@ -1,0 +1,71 @@
+﻿@using Lumen.Models
+@using Lumen.Services.UserServices
+@using MudBlazor
+
+@inject IUserAdminService UserService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6" Style="color:#FFD700; font-weight:700;">تغییر رمز عبور</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudTextField T="string" @bind-Value="dto.NewPassword"
+                          Label="رمز عبور جدید"
+                          InputType="InputType.Password"
+                          Variant="Variant.Outlined" Margin="Margin.Dense" />
+
+            <MudTextField T="string" @bind-Value="dto.ConfirmPassword"
+                          Label="تکرار رمز عبور"
+                          InputType="InputType.Password"
+                          Variant="Variant.Outlined" Margin="Margin.Dense" />
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true">@errorMessage</MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Variant="Variant.Text" OnClick="Cancel">انصراف</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Warning"
+                   OnClick="Save" Disabled="@saving">
+            @(saving ? "..." : "ذخیره")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public string UserId { get; set; } = "";
+
+    private ChangePasswordDto dto = new();
+    private string errorMessage = "";
+    private bool saving;
+
+    protected override void OnInitialized()
+    {
+        dto.UserId = UserId;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Save()
+    {
+        errorMessage = "";
+        saving = true;
+        var result = await UserService.ResetPasswordAsync(dto);
+        saving = false;
+
+        if (!result.Succeeded)
+        {
+            errorMessage = string.Join(" • ", result.Errors.Select(e => e.Description));
+            return;
+        }
+
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+}

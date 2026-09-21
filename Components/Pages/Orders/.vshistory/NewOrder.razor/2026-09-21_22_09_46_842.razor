@@ -1,0 +1,770 @@
+﻿@page "/admin/orders/new"
+@attribute [Authorize(Roles = "Owner,BranchManager,Cashier")]
+@rendermode InteractiveServer
+@layout Components.Layout.AdminLayout
+@using Lumen.Models
+@using Lumen.Models.Enums
+@using Lumen.Services.BranchServices
+@using Lumen.Services.CustomerServices
+@using Lumen.Services.OrderServices
+@using Lumen.Services.ProductCatgoryServices
+@using Lumen.Services.ProductServices
+@using MudBlazor
+
+<PageTitle>سفارش جدید - پنل قهوه</PageTitle>
+
+<div class="order-page">
+
+    @* ============ HEADER ============ *@
+    <div class="order-header">
+        <h3>🧾 سفارش جدید</h3>
+        <div class="header-total">
+            <span>جمع کل:</span>
+            <strong>@total.ToString("N0") تومان</strong>
+        </div>
+    </div>
+
+    <div class="order-body">
+
+        @* ============ LEFT: PRODUCTS ============ *@
+        <div class="products-pane">
+
+            @* Search + Category tabs *@
+            <div class="filters">
+                <input class="search-input"
+                       placeholder="جستجوی محصول..."
+                       @bind="searchString"
+                       @bind:event="oninput" />
+
+                <div class="category-tabs">
+                    <button class="cat-tab @(selectedCategoryId == 0 ? "active" : "")"
+                            @onclick="() => SelectCategory(0)">
+                        همه
+                    </button>
+                    @foreach (var cat in categories)
+                    {
+                        <button class="cat-tab @(selectedCategoryId == cat.ProductCategoryId ? "active" : "")"
+                                @onclick="() => SelectCategory(cat.ProductCategoryId)">
+                            @cat.Title
+                        </button>
+                    }
+                </div>
+            </div>
+
+            @* Product list *@
+            <div class="product-list">
+                @if (!FilteredProducts.Any())
+                {
+                    <div class="empty-state">محصولی یافت نشد</div>
+                }
+                else
+                {
+                    @foreach (var p in FilteredProducts)
+                    {
+                        var line = GetOrCreateLine(p);
+                        var qty = line?.Quantity ?? 0;
+                        var price = GetPriceFor(p);
+
+                        <div class="product-row @(qty > 0 ? "in-cart" : "")">
+                            <div class="product-info">
+                                <div class="product-title">@p.Title</div>
+                                <div class="product-price">@price.ToString("N0") تومان</div>
+                            </div>
+
+                            <div class="stepper">
+                                <button class="step-btn minus" disabled="@(qty == 0)"
+                                        @onclick="() => Decrease(p)">
+                                    −
+                                </button>
+                                <span class="qty">@qty</span>
+                                <button class="step-btn plus" @onclick="() => Increase(p)">
+                                    +
+                                </button>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        @* ============ RIGHT: SIDE PANEL ============ *@
+        <div class="side-pane">
+
+            @* Customer *@
+            <div class="panel-section">
+                <div class="section-title">👤 مشتری</div>
+
+                <MudTextField T="string"
+                              Value="phone"
+                              ValueChanged="@OnPhoneChanged"
+                              Label="شماره موبایل"
+                              Variant="Variant.Outlined"
+                              Immediate="true"
+                              DebounceInterval="350"
+                              Margin="Margin.Dense" />
+
+                @if (customer != null)
+                {
+                    <div class="customer-status success">
+                        <i class="fa fa-check"></i> مشتری موجود: <strong>@customer.FullName</strong>
+                    </div>
+                }
+                else if (!string.IsNullOrWhiteSpace(phone) && phone.Trim().Length >= 8)
+                {
+                    <div class="customer-status info">
+                        مشتری جدید — نام را وارد کنید
+                    </div>
+                    <MudTextField T="string"
+                                  @bind-Value="customerName"
+                                  Label="نام مشتری جدید"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense" />
+                }
+
+                <MudCheckBox T="bool"
+                             @bind-Value="isBusiness"
+                             Label="مشتری تجاری"
+                             Color="Color.Warning"
+                             Dense="true" />
+            </div>
+
+            @* Branch *@
+            <div class="panel-section">
+                <div class="section-title">🏢 شعبه</div>
+                <MudSelect T="long" @bind-Value="branchId" Variant="Variant.Outlined" Margin="Margin.Dense">
+                    @foreach (var b in branches)
+                    {
+                        <MudSelectItem T="long" Value="@b.BranchId">@b.Title</MudSelectItem>
+                    }
+                </MudSelect>
+            </div>
+
+            @* Summary *@
+            <div class="panel-section summary">
+                <div class="section-title">🧾 خلاصه</div>
+
+                @if (cart.Count == 0)
+                {
+                    <div class="summary-empty">سبد خالی است</div>
+                }
+                else
+                {
+                    <div class="cart-lines">
+                        @foreach (var l in cart)
+                        {
+                            var line = l;
+                            <div class="cart-line">
+                                <span class="cl-qty">@line.Quantity ×</span>
+                                <span class="cl-title">@line.ProductTitle</span>
+                                <span class="cl-total">@line.LineTotal.ToString("N0")</span>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="summary-row">
+                        <span>اقلام:</span>
+                        <span>@cart.Sum(x => x.Quantity)</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>جمع:</span>
+                        <span>@subTotal.ToString("N0") تومان</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>کل:</span>
+                        <span>@total.ToString("N0") تومان</span>
+                    </div>
+                }
+
+                <MudButton Color="Color.Warning"
+                           Variant="Variant.Filled"
+                           FullWidth="true"
+                           Class="submit-btn"
+                           OnClick="Submit"
+                           Disabled="@(saving || cart.Count == 0 || branchId == 0)">
+                    @(saving ? "در حال ثبت..." : "ثبت سفارش")
+                </MudButton>
+
+                @if (cart.Count > 0)
+                {
+                    <MudButton Variant="Variant.Text"
+                               Color="Color.Error"
+                               FullWidth="true"
+                               Class="mt-2"
+                               OnClick="ClearCart">
+                        پاک کردن سبد
+                    </MudButton>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* ========== PAGE LAYOUT ========== */
+    .order-page {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 100px);
+        gap: 16px;
+    }
+
+    .order-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+        .order-header h3 {
+            margin: 0;
+            background: linear-gradient(135deg, #FFD700, #FFB800);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 26px;
+            font-weight: 700;
+        }
+
+    .header-total {
+        color: rgba(255,255,255,0.6);
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        font-size: 16px;
+    }
+
+        .header-total strong {
+            color: #FFD700;
+            font-size: 20px;
+        }
+
+    .order-body {
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 16px;
+        flex: 1;
+        min-height: 0;
+    }
+
+    /* ========== PRODUCTS PANE ========== */
+    .products-pane {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,215,0,0.08);
+        border-radius: 16px;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    .filters {
+        padding: 14px 16px;
+        border-bottom: 1px solid rgba(255,215,0,0.08);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .search-input {
+        width: 100%;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,215,0,0.15);
+        border-radius: 10px;
+        color: #fff;
+        padding: 10px 14px;
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.2s ease;
+    }
+
+        .search-input:focus {
+            border-color: #FFD700;
+        }
+
+        .search-input::placeholder {
+            color: rgba(255,255,255,0.3);
+        }
+
+    .category-tabs {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 2px;
+        scrollbar-width: thin;
+    }
+
+        .category-tabs::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .category-tabs::-webkit-scrollbar-thumb {
+            background: rgba(255,215,0,0.2);
+            border-radius: 4px;
+        }
+
+    .cat-tab {
+        flex: 0 0 auto;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,215,0,0.1);
+        color: rgba(255,255,255,0.6);
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+
+        .cat-tab:hover {
+            border-color: rgba(255,215,0,0.3);
+            color: #FFD700;
+        }
+
+        .cat-tab.active {
+            background: linear-gradient(135deg, #FFD700, #FFB800);
+            color: #1a1a1a;
+            font-weight: 700;
+            border-color: transparent;
+        }
+
+    .product-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px;
+        scrollbar-width: thin;
+    }
+
+        .product-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .product-list::-webkit-scrollbar-thumb {
+            background: rgba(255,215,0,0.15);
+            border-radius: 3px;
+        }
+
+    .product-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 14px;
+        border-radius: 10px;
+        margin-bottom: 6px;
+        background: rgba(255,255,255,0.02);
+        border: 1px solid transparent;
+        transition: all 0.15s ease;
+    }
+
+        .product-row:hover {
+            background: rgba(255,215,0,0.05);
+            border-color: rgba(255,215,0,0.15);
+        }
+
+        .product-row.in-cart {
+            background: rgba(255,215,0,0.08);
+            border-color: rgba(255,215,0,0.3);
+        }
+
+    .product-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .product-title {
+        color: #fff;
+        font-size: 15px;
+        font-weight: 500;
+    }
+
+    .product-price {
+        color: rgba(255,215,0,0.7);
+        font-size: 12px;
+    }
+
+    .stepper {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(0,0,0,0.3);
+        border-radius: 24px;
+        padding: 3px;
+        flex: 0 0 auto;
+    }
+
+    .step-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(255,215,0,0.1);
+        color: #FFD700;
+        font-size: 20px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s ease;
+        line-height: 1;
+        padding: 0;
+    }
+
+        .step-btn:hover:not(:disabled) {
+            background: #FFD700;
+            color: #1a1a1a;
+        }
+
+        .step-btn:disabled {
+            opacity: 0.25;
+            cursor: not-allowed;
+        }
+
+        .step-btn.plus {
+            background: rgba(255,215,0,0.2);
+        }
+
+    .qty {
+        min-width: 32px;
+        text-align: center;
+        color: #fff;
+        font-weight: 700;
+        font-size: 16px;
+    }
+
+    .empty-state {
+        padding: 60px 20px;
+        text-align: center;
+        color: rgba(255,255,255,0.3);
+        font-size: 15px;
+    }
+
+    /* ========== SIDE PANE ========== */
+    .side-pane {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+    }
+
+        .side-pane::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .side-pane::-webkit-scrollbar-thumb {
+            background: rgba(255,215,0,0.15);
+            border-radius: 3px;
+        }
+
+    .panel-section {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,215,0,0.08);
+        border-radius: 14px;
+        padding: 14px;
+    }
+
+    .section-title {
+        color: #FFD700;
+        font-weight: 700;
+        font-size: 14px;
+        margin-bottom: 10px;
+    }
+
+    .customer-status {
+        margin-top: 8px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 13px;
+    }
+
+        .customer-status.success {
+            background: rgba(102, 187, 106, 0.12);
+            border: 1px solid rgba(102, 187, 106, 0.3);
+            color: #66bb6a;
+        }
+
+        .customer-status.info {
+            background: rgba(79, 195, 247, 0.1);
+            border: 1px solid rgba(79, 195, 247, 0.25);
+            color: #4fc3f7;
+        }
+
+    .summary .summary-row {
+        display: flex;
+        justify-content: space-between;
+        color: rgba(255,255,255,0.75);
+        font-size: 14px;
+        padding: 4px 0;
+    }
+
+        .summary .summary-row.total {
+            border-top: 1px solid rgba(255,215,0,0.15);
+            margin-top: 6px;
+            padding-top: 10px;
+            color: #FFD700;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+    .summary-empty {
+        color: rgba(255,255,255,0.35);
+        font-size: 13px;
+        text-align: center;
+        padding: 12px;
+    }
+
+    .cart-lines {
+        max-height: 220px;
+        overflow-y: auto;
+        margin-bottom: 10px;
+        border-bottom: 1px solid rgba(255,215,0,0.08);
+        padding-bottom: 8px;
+        scrollbar-width: thin;
+    }
+
+    .cart-line {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: rgba(255,255,255,0.8);
+        font-size: 13px;
+        padding: 4px 0;
+    }
+
+    .cl-qty {
+        color: #FFD700;
+        font-weight: 700;
+        min-width: 30px;
+    }
+
+    .cl-title {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .cl-total {
+        color: rgba(255,255,255,0.6);
+        font-size: 12px;
+    }
+
+    .submit-btn {
+        margin-top: 12px;
+        font-weight: 700 !important;
+        padding: 12px !important;
+    }
+
+    /* ========== RESPONSIVE ========== */
+    @@media (max-width: 900px) {
+        .order-page {
+            height: auto;
+        }
+
+        .order-body {
+            grid-template-columns: 1fr;
+        }
+
+        .side-pane {
+            order: -1;
+            max-height: none;
+        }
+
+        .product-list {
+            max-height: 60vh;
+        }
+
+        .cart-lines {
+            max-height: 140px;
+        }
+    }
+
+    @@media (max-width: 600px) {
+        .order-header h3 {
+            font-size: 20px;
+        }
+
+        .header-total strong {
+            font-size: 16px;
+        }
+
+        .product-row {
+            padding: 10px;
+        }
+
+        .product-title {
+            font-size: 14px;
+        }
+
+        .step-btn {
+            width: 30px;
+            height: 30px;
+            font-size: 18px;
+        }
+
+        .qty {
+            min-width: 26px;
+            font-size: 15px;
+        }
+    }
+</style>
+
+@code {
+    [Inject] private IProductService ProductService { get; set; } = default!;
+    [Inject] private IProductCategoryService CategoryService { get; set; } = default!;
+    [Inject] private ICustomerService CustomerService { get; set; } = default!;
+    [Inject] private IOrderService OrderService { get; set; } = default!;
+    [Inject] private IBranchService BranchService { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    private List<Product> allProducts = new();
+    private List<ProductCategory> categories = new();
+    private List<Branch> branches = new();
+    private List<OrderLineDto> cart = new();
+
+    private string searchString = "";
+    private long selectedCategoryId = 0;
+
+    private string phone = "";
+    private string customerName = "";
+    private bool isBusiness;
+    private Customer? customer;
+
+    private long branchId;
+    private bool saving;
+
+    private decimal subTotal => cart.Sum(l => l.LineTotal);
+    private decimal total => subTotal;
+
+    private IEnumerable<Product> FilteredProducts =>
+        allProducts
+            .Where(p => selectedCategoryId == 0 || p.ProductCategoryId == selectedCategoryId)
+            .Where(p => string.IsNullOrWhiteSpace(searchString)
+                        || p.Title.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(p => p.Title);
+
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            allProducts = ProductService.GetAll(null, true);   // only available
+            categories = CategoryService.GetAll(0, 0, null);
+            branches = BranchService.GetAll();
+            branchId = branches.FirstOrDefault()?.BranchId ?? 0;
+            StateHasChanged();
+        }
+    }  
+
+    // protected override void OnInitialized()
+    // {
+    //     allProducts = ProductService.GetAll(null, true);   // only available
+    //     categories = CategoryService.GetAll(0, 0, null);
+    //     branches = BranchService.GetAll();
+    //     branchId = branches.FirstOrDefault()?.BranchId ?? 0;
+    // }
+
+    private void SelectCategory(long id) => selectedCategoryId = id;
+
+    private OrderLineDto? GetOrCreateLine(Product p) =>
+        cart.FirstOrDefault(l => l.ProductId == p.ProductId);
+
+    private decimal GetPriceFor(Product p) =>
+        isBusiness && p.BusinessPrice.HasValue ? p.BusinessPrice.Value : p.EcoPrice;
+
+    private void Increase(Product p)
+    {
+        var line = GetOrCreateLine(p);
+        if (line == null)
+        {
+            cart.Add(new OrderLineDto
+            {
+                ProductId = p.ProductId,
+                ProductTitle = p.Title,
+                UnitPrice = GetPriceFor(p),
+                Quantity = 1
+            });
+        }
+        else
+        {
+            line.Quantity++;
+        }
+    }
+
+    private void Decrease(Product p)
+    {
+        var line = GetOrCreateLine(p);
+        if (line == null) return;
+        line.Quantity--;
+        if (line.Quantity <= 0)
+            cart.Remove(line);
+    }
+
+    private void OnPhoneChanged(string value)
+    {
+        phone = value ?? "";
+        var p = phone.Trim();
+        customer = string.IsNullOrWhiteSpace(p) ? null : CustomerService.GetByPhone(p);
+        if (customer != null)
+        {
+            customerName = customer.FullName;
+            isBusiness = customer.IsBusiness;
+            RecalcPrices();
+        }
+    }
+
+    private void RecalcPrices()
+    {
+        // Recalculate all cart line prices when customer type changes
+        foreach (var line in cart)
+        {
+            var p = allProducts.FirstOrDefault(x => x.ProductId == line.ProductId);
+            if (p != null) line.UnitPrice = GetPriceFor(p);
+        }
+    }
+
+    private void ClearCart()
+    {
+        cart.Clear();
+    }
+
+    private void Submit()
+    {
+        if (cart.Count == 0) { Snackbar.Add("سبد خالی است", Severity.Warning); return; }
+        if (branchId == 0) { Snackbar.Add("شعبه را انتخاب کنید", Severity.Warning); return; }
+
+        saving = true;
+        try
+        {
+            var dto = new SubmitOrderDto
+            {
+                BranchId = branchId,
+                CustomerPhone = phone?.Trim(),
+                CustomerName = customerName?.Trim(),
+                CustomerIsBusiness = isBusiness,
+                Items = cart,
+                Payments = new List<PaymentDto>
+                {
+                    new PaymentDto { Method = PaymentMethod.Cash, Amount = total }
+                }
+            };
+
+            var (order, cust, created) = OrderService.SubmitOrder(dto);
+            Snackbar.Add($"سفارش {order.OrderNumber} ثبت شد" +
+                         (created ? " — مشتری جدید ایجاد شد" : ""), Severity.Success);
+            Nav.NavigateTo("/admin/orders");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("خطا: " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+}

@@ -10,8 +10,9 @@
 @inject AuthenticationStateProvider AuthProvider
 @inject CurrentUserState UserState
 
-<MudThemeProvider />
+<MudThemeProvider Theme="@_theme" IsDarkMode="true" />
 <MudSnackbarProvider />
+<MudPopoverProvider />
 <MudRTLProvider RightToLeft="true">
     <!-- Mobile Menu Toggle Button -->
     <MudButton Class="menu-toggle-btn" OnClick="ToggleSidebar">
@@ -49,6 +50,11 @@
                 </a>
                 <a href="/admin/orders" class="nav-link @(IsActive("/admin/orders") ? "active" : "")" @onclick="CloseSidebar">
                     🧾 سفارشات
+                </a>
+                <a href="/admin/users"
+                   class="nav-link @(IsActive("/admin/users") ? "active" : "")"
+                   @onclick="CloseSidebar">
+                    👥 کاربران
                 </a>
                 <MudButton OnClick="Logout" Variant="Variant.Text" Color="Color.Warning">
                     خروج
@@ -425,6 +431,48 @@
     private bool isMobile = false;
     private bool isJSInitialized = false;
 
+    private readonly MudTheme _theme = new()
+    {
+        PaletteDark = new PaletteDark
+        {
+            Primary = "#FFD700",
+            Secondary = "#FFB800",
+            Background = "#0a0a0a",
+            BackgroundGray = "#1a1a1a",
+            Surface = "#1a1a1a",
+            DrawerBackground = "#0f0f0f",
+            AppbarBackground = "#0f0f0f",
+            TextPrimary = "#ffffff",
+            TextSecondary = "rgba(255,255,255,0.7)",
+            TextDisabled = "rgba(255,255,255,0.3)",
+            ActionDefault = "#FFD700",
+            ActionDisabled = "rgba(255,255,255,0.25)",
+            Divider = "rgba(255,215,0,0.15)",
+            DividerLight = "rgba(255,215,0,0.08)",
+            LinesDefault = "rgba(255,215,0,0.15)",
+            LinesInputs = "rgba(255,215,0,0.25)",
+            TableLines = "rgba(255,215,0,0.1)",
+            TableStriped = "rgba(255,255,255,0.02)",
+            Info = "#4fc3f7",
+            Success = "#66bb6a",
+            Warning = "#FFB800",
+            Error = "#f44336",
+            Dark = "#0a0a0a",
+            GrayDefault = "#333",
+            GrayLight = "#555",
+            GrayLighter = "#777",
+            GrayDark = "#1a1a1a",
+            GrayDarker = "#0a0a0a",
+            OverlayDark = "rgba(0,0,0,0.75)",
+            OverlayLight = "rgba(0,0,0,0.5)"
+        },
+        LayoutProperties = new LayoutProperties
+        {
+            DefaultBorderRadius = "12px"
+        }
+    };
+
+
     protected override async Task OnInitializedAsync()
     {
         try
@@ -446,10 +494,11 @@
             isMobileOpen = true;
         }
     }
-    private async Task Logout()
+    private Task Logout()
     {
-        await SignInManager.SignOutAsync();
-        NavigationManager.NavigateTo("/admin/login", forceLoad: true);
+        //await SignInManager.SignOutAsync();
+        NavigationManager.NavigateTo("/admin/logout", forceLoad: true);
+        return Task.CompletedTask;
     }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

@@ -58,3 +58,147 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+
+
+/* ============================================
+   MudBlazor dark overrides for the admin panel
+   ============================================ */
+
+/* Dialog surface */
+.mud-dialog {
+    background: linear-gradient(135deg, #141414 0%, #0f0f0f 100%) !important;
+    border: 1px solid rgba(255, 215, 0, 0.15) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7) !important;
+    color: #fff !important;
+}
+
+/* Title */
+.mud-dialog-title {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255, 215, 0, 0.08) !important;
+    padding: 20px 24px !important;
+}
+
+    .mud-dialog-title .mud-typography {
+        color: #FFD700 !important;
+        font-weight: 700 !important;
+    }
+
+/* Content */
+.mud-dialog-content {
+    background: transparent !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    padding: 20px 24px !important;
+}
+
+/* Actions */
+.mud-dialog-actions {
+    background: transparent !important;
+    border-top: 1px solid rgba(255, 215, 0, 0.08) !important;
+    padding: 16px 24px !important;
+}
+
+/* Inputs inside dialogs */
+.mud-dialog .mud-input-control .mud-input.mud-input-outlined .mud-input-outlined-border,
+.mud-dialog .mud-input-control .mud-input.mud-input-filled {
+    border-color: rgba(255, 215, 0, 0.2) !important;
+    background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+.mud-dialog .mud-input-control .mud-input-outlined-border:hover {
+    border-color: rgba(255, 215, 0, 0.4) !important;
+}
+
+.mud-dialog .mud-input-control.mud-input-focused .mud-input-outlined-border {
+    border-color: #FFD700 !important;
+}
+
+.mud-dialog .mud-input,
+.mud-dialog .mud-input > input,
+.mud-dialog .mud-input > textarea {
+    color: #fff !important;
+    background: transparent !important;
+}
+
+.mud-dialog .mud-input-label,
+.mud-dialog .mud-input-label-outlined,
+.mud-dialog .mud-input-label-inputcontrol {
+    color: rgba(255, 215, 0, 0.7) !important;
+    background-color: #141414 !important;
+}
+
+.mud-dialog .mud-input.mud-input-outlined .mud-input-slot::placeholder,
+.mud-dialog input::placeholder,
+.mud-dialog textarea::placeholder {
+    color: rgba(255, 255, 255, 0.35) !important;
+}
+
+/* Checkbox */
+.mud-dialog .mud-checkbox .mud-checkbox-label {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* Buttons */
+.mud-dialog .mud-button-text {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+    .mud-dialog .mud-button-text:hover {
+        background-color: rgba(255, 215, 0, 0.08) !important;
+        color: #FFD700 !important;
+    }
+
+.mud-dialog .mud-button-filled-warning {
+    background: linear-gradient(135deg, #FFD700, #FFB800) !important;
+    color: #1a1a1a !important;
+    font-weight: 700 !important;
+}
+
+    .mud-dialog .mud-button-filled-warning:hover {
+        box-shadow: 0 6px 20px rgba(255, 215, 0, 0.35) !important;
+    }
+
+/* Divider inside dialog */
+.mud-dialog hr {
+    border-color: rgba(255, 215, 0, 0.1) !important;
+}
+
+
+
+
+
+
+
+/*
+.mud-popover-provider {
+    z-index: 2000 !important;
+}
+
+.mud-popover {
+    z-index: 2001 !important;
+}
+
+.mud-list {
+    background-color: #1a1a1a !important;
+    color: #fff !important;
+    border: 1px solid rgba(255, 215, 0, 0.15) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7) !important;
+}
+
+.mud-list-item {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+    .mud-list-item:hover,
+    .mud-list-item.mud-list-item-clickable:hover {
+        background-color: rgba(255, 215, 0, 0.1) !important;
+        color: #FFD700 !important;
+    }
+
+    .mud-list-item.mud-selected-item {
+        background-color: rgba(255, 215, 0, 0.15) !important;
+        color: #FFD700 !important;
+    }*/

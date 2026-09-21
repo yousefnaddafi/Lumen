@@ -36,8 +36,8 @@
             }
         </MudSelect>
 
-        <MudDatePicker @bind-Date="fromDate" Label="از تاریخ" />
-        <MudDatePicker @bind-Date="toDate" Label="تا تاریخ" />
+        <MudDatePicker @bind-Date="fromDate" Label="از تاریخ" Culture="culture"/>
+        <MudDatePicker @bind-Date="toDate" Label="تا تاریخ" Culture="culture" />
 
         <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Load">فیلتر</MudButton>
     </div>

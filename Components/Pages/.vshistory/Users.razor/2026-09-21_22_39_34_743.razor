@@ -1,0 +1,227 @@
+﻿@page "/admin/users"
+@attribute [Authorize(Roles = "Owner")]
+@rendermode InteractiveServer
+@layout Components.Layout.AdminLayout
+@using Lumen.Components.Pages.Dialogs
+@using Lumen.Models.Dtos
+@using Lumen.Services.UserServices
+@using Microsoft.AspNetCore.Identity
+@using MudBlazor
+@using System.Globalization
+@inject IUserAdminService UserService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>کاربران - پنل قهوه</PageTitle>
+
+<div style="width: 100%;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
+        <div>
+            <h3 style="margin:0; background: linear-gradient(135deg,#FFD700,#FFB800); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-size:28px; font-weight:700;">
+                👥 کاربران
+            </h3>
+            <p style="color: rgba(255,255,255,0.4); margin:4px 0 0 0; font-size:14px;">مدیریت کارکنان و دسترسی‌ها</p>
+        </div>
+        <MudButton Class="glass-btn" OnClick="@(async () => await OpenCreateDialog())">
+            + افزودن کاربر
+        </MudButton>
+    </div>
+
+    @if (loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Warning" />
+    }
+    else if (users.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info">هیچ کاربری ثبت نشده است.</MudAlert>
+    }
+    else
+    {
+        <div style="background: rgba(255,255,255,0.02); border-radius:16px; border:1px solid rgba(255,255,255,0.03); overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; min-width:900px;">
+                <thead style="background: rgba(255,215,0,0.05);">
+                    <tr>
+                        <th style="color:#FFD700; padding:14px; text-align:right;">نام کاربری</th>
+                        <th style="color:#FFD700; padding:14px; text-align:right;">نام کامل</th>
+                        <th style="color:#FFD700; padding:14px; text-align:right;">نقش‌ها</th>
+                        <th style="color:#FFD700; padding:14px; text-align:right;">شعبه‌ها</th>
+                        <th style="color:#FFD700; padding:14px; text-align:right;">وضعیت</th>
+                        <th style="color:#FFD700; padding:14px; text-align:right;">عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var u in users)
+                    {
+                        var user = u;
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                            <td style="padding:14px; color:rgba(255,255,255,0.85); font-weight:500;">@user.UserName</td>
+                            <td style="padding:14px; color:rgba(255,255,255,0.7);">@user.FullName</td>
+                            <td style="padding:14px;">
+                                @foreach (var r in user.Roles)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined">
+                                        @RoleLabel(r)
+                                    </MudChip>
+                                }
+                            </td>
+                            <td style="padding:14px; color:rgba(255,255,255,0.6); font-size:13px;">
+                                @(user.BranchNames.Any() ? string.Join(" ، ", user.BranchNames) : "—")
+                            </td>
+                            <td style="padding:14px;">
+                                @if (user.IsActive)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Filled">فعال</MudChip>
+                                }
+                                else
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled">غیرفعال</MudChip>
+                                }
+                            </td>
+                            <td style="padding:14px;">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                               Color="Color.Warning"
+                                               Size="Size.Small"
+                                               OnClick="@(() => OpenEditDialog(user))"
+                                               Title="ویرایش" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Lock"
+                                               Color="Color.Info"
+                                               Size="Size.Small"
+                                               OnClick="@(() => OpenPasswordDialog(user))"
+                                               Title="تغییر رمز" />
+                                <MudIconButton Icon="@(user.IsActive? Icons.Material.Filled.Block : Icons.Material.Filled.CheckCircle)"
+                                               Color="@(user.IsActive ? Color.Default : Color.Success)"
+                                               Size="Size.Small"
+                                               OnClick="@(() => ToggleActive(user))"
+                                               Title="@(user.IsActive ? "غیرفعال کردن" : "فعال کردن")" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                               Color="Color.Error"
+                                               Size="Size.Small"
+                                               OnClick="@(() => DeleteUser(user))"
+                                               Title="حذف" />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    private List<UserListItem> users = new();
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        loading = true;
+        users = await UserService.GetAllAsync();
+        loading = false;
+        StateHasChanged();
+    }
+
+    private async Task OpenCreateDialog()
+    {
+        var dialog = await DialogService.ShowAsync<CreateUserDialog>("",
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false });
+
+        var result = await dialog.Result;
+        if (!result.Canceled && result.Data is bool ok && ok)
+        {
+            await Load();
+            Snackbar.Add("کاربر با موفقیت ایجاد شد", Severity.Success);
+        }
+    }
+
+    private async Task OpenEditDialog(UserListItem user)
+    {
+        var parameters = new DialogParameters
+        {
+            ["UserId"] = user.Id,
+            ["InitialRoles"] = user.Roles,
+            ["InitialBranchIds"] = user.BranchIds
+        };
+        var dialog = await DialogService.ShowAsync<EditUserDialog>("", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false });
+
+        var result = await dialog.Result;
+        if (!result.Canceled && result.Data is bool ok && ok)
+        {
+            await Load();
+            Snackbar.Add("کاربر بروزرسانی شد", Severity.Success);
+        }
+    }
+
+    private async Task OpenPasswordDialog(UserListItem user)
+    {
+        var parameters = new DialogParameters { ["UserId"] = user.Id };
+        var dialog = await DialogService.ShowAsync<ChangePasswordDialog>("", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.ExtraSmall, FullWidth = true, BackdropClick = false });
+
+        var result = await dialog.Result;
+        if (!result.Canceled && result.Data is bool ok && ok)
+        {
+            Snackbar.Add("رمز عبور تغییر کرد", Severity.Success);
+        }
+    }
+
+    private async Task ToggleActive(UserListItem user)
+    {
+        var verb = user.IsActive ? "غیرفعال" : "فعال";
+        var confirm = await DialogService.ShowMessageBoxAsync(
+            $"{verb} کردن کاربر",
+            $"آیا از {verb} کردن «{user.UserName}» مطمئن هستید؟",
+            "بله", "انصراف");
+
+        if (confirm == true)
+        {
+            var result = await UserService.SetActiveAsync(user.Id, !user.IsActive);
+            if (result.Succeeded)
+            {
+                await Load();
+                Snackbar.Add($"کاربر {verb} شد", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add(string.Join(" • ", result.Errors.Select(e => e.Description)), Severity.Error);
+            }
+        }
+    }
+
+    private async Task DeleteUser(UserListItem user)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync(
+            "حذف کاربر",
+            $"آیا از حذف «{user.UserName}» مطمئن هستید؟ این عمل بازگشت‌پذیر نیست.",
+            "حذف", "انصراف");
+
+        if (confirm == true)
+        {
+            var result = await UserService.DeleteAsync(user.Id, "");
+            if (result.Succeeded)
+            {
+                await Load();
+                Snackbar.Add("کاربر حذف شد", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add(string.Join(" • ", result.Errors.Select(e => e.Description)), Severity.Error);
+            }
+        }
+    }
+
+    private static string RoleLabel(string role) => role switch
+    {
+        "Owner" => "مدیر",
+        "BranchManager" => "مدیر شعبه",
+        "Cashier" => "صندوق‌دار",
+        "Barista" => "باریستا",
+        "Accountant" => "حسابدار",
+        "MenuAdmin" => "مدیر منو",
+        _ => role
+    };
+}

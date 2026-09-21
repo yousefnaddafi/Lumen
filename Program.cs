@@ -114,6 +114,11 @@ app.UseAntiforgery();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
+app.MapGet("/admin/logout", async (HttpContext context, SignInManager<AppUser> signInManager) =>
+{
+    await signInManager.SignOutAsync();
+    context.Response.Redirect("/admin/login");
+}).RequireAuthorization();
 app.MapPost("/admin/login-handler", async (
     HttpContext context,
     SignInManager<AppUser> signInManager) =>

@@ -40,9 +40,12 @@ builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/admin/login";
     options.AccessDeniedPath = "/admin/login";
+    options.Cookie.Name = "Lumen.Auth";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;   // allow http in dev, require https in prod
     options.ExpireTimeSpan = TimeSpan.FromDays(7);
     options.SlidingExpiration = true;
-    options.Cookie.Name = "Lumen.Auth";
 });
 
 // --- Blazor needs these two, in this order ---
@@ -121,18 +124,41 @@ app.MapGet("/admin/logout", async (HttpContext context, SignInManager<AppUser> s
 }).RequireAuthorization();
 app.MapPost("/admin/login-handler", async (
     HttpContext context,
-    SignInManager<AppUser> signInManager) =>
+    SignInManager<AppUser> signInManager,
+    UserManager<AppUser> userManager) =>
 {
     var form = await context.Request.ReadFormAsync();
-    var username = form["username"].ToString();
+    var username = form["username"].ToString().Trim();
     var password = form["password"].ToString();
+    var returnUrl = form["returnUrl"].ToString();
+
+    if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+    {
+        context.Response.Redirect("/admin/login?error=invalid");
+        return;
+    }
+
+    // Honor IsActive — Identity doesn't check it for us
+    var user = await userManager.FindByNameAsync(username);
+    if (user == null || !user.IsActive)
+    {
+        context.Response.Redirect("/admin/login?error=invalid");
+        return;
+    }
 
     var result = await signInManager.PasswordSignInAsync(
-        username, password, isPersistent: true, lockoutOnFailure: true);
+        user, password, isPersistent: true, lockoutOnFailure: true);
 
     if (result.Succeeded)
     {
-        context.Response.Redirect("/admin/products");
+        var target = !string.IsNullOrWhiteSpace(returnUrl) && returnUrl.StartsWith('/')
+            ? returnUrl
+            : "/admin/orders";
+        context.Response.Redirect(target);
+    }
+    else if (result.IsLockedOut)
+    {
+        context.Response.Redirect("/admin/login?error=locked");
     }
     else
     {

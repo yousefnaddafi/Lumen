@@ -1,0 +1,208 @@
+﻿@page "/admin/inventory"
+@attribute [Authorize(Roles = "Owner,BranchManager,Accountant")]
+@rendermode InteractiveServer
+@layout Components.Layout.AdminLayout
+@using Lumen.Components.Pages.Dialogs
+@using Lumen.Models
+@using Lumen.Models.Dtos
+@using Lumen.Services.BranchServices
+@using Lumen.Services.InventoryServices
+@using MudBlazor
+@using System.Globalization
+@inject IInventoryService InventoryService
+@inject IBranchService BranchService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>موجودی انبار - پنل قهوه</PageTitle>
+
+<div style="width:100%;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
+        <div>
+            <h3 style="margin:0; background: linear-gradient(135deg,#FFD700,#FFB800); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-size:28px; font-weight:700;">
+                📦 موجودی انبار
+            </h3>
+            <p style="color: rgba(255,255,255,0.4); margin:4px 0 0 0; font-size:14px;">موجودی هر محصول در هر شعبه</p>
+        </div>
+        <div style="display:flex; gap:8px;">
+            <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                       OnClick="@(() => NavigationManager.NavigateTo("/admin/stock-history"))">
+                تاریخچه حرکات
+            </MudButton>
+            @* <MudButton Variant="Variant.Filled" Color="Color.Warning"
+                       OnClick="@(() => OpenAdjustDialog(null))"
+                       Disabled="@(branchId == 0)">
+                + ثبت حرکت انبار
+            </MudButton> *@
+            <MudButton Variant="Variant.Filled" Color="Color.Warning"
+           OnClick="OpenAdjustDialog"
+                       Disabled="@(branchId == 0)">
+                + ثبت حرکت انبار
+            </MudButton>
+        </div>
+    </div>
+
+    <div style="display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; align-items:center;">
+        <MudSelect T="long" @bind-Value="branchId" Label="شعبه" Variant="Variant.Outlined"
+                   Style="min-width:220px;"
+                   ValueChanged="@OnBranchChanged">
+            @foreach (var b in branches)
+            {
+                <MudSelectItem T="long" Value="@b.BranchId">@b.Title</MudSelectItem>
+            }
+        </MudSelect>
+
+        <input @bind="searchString" @bind:event="oninput"
+               placeholder="جستجوی محصول..."
+               style="flex:1; min-width:220px; background: rgba(255,255,255,0.05); border:1px solid rgba(255,215,0,0.12); border-radius:12px; color:#fff; padding:12px 16px; outline:none;" />
+
+        <MudCheckBox T="bool" @bind-Value="onlyLow" Label="فقط کم‌موجود" Color="Color.Warning"
+                     ValueChanged="@((bool v) => { onlyLow = v; Load(); })" />
+    </div>
+
+    @if (loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Warning" />
+    }
+    else if (rows.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info">
+            @(onlyLow ? "هیچ محصول کم‌موجودی وجود ندارد" : "هیچ سطر موجودی یافت نشد. برای شروع، یک حرکت انبار ثبت کنید.")
+        </MudAlert>
+    }
+    else
+    {
+        <div style="background: rgba(255,255,255,0.02); border-radius:16px; border:1px solid rgba(255,255,255,0.03); overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; min-width:800px;">
+                <thead style="background: rgba(255,215,0,0.05);">
+                    <tr>
+                        <th style="color:#FFD700; padding:14px; text-align:right;">محصول</th>
+                        <th style="color:#FFD700; padding:14px; text-align:right;">دسته</th>
+                        <th style="color:#FFD700; padding:14px; text-align:right;">موجودی</th>
+                        <th style="color:#FFD700; padding:14px; text-align:right;">حد سفارش</th>
+                        <th style="color:#FFD700; padding:14px; text-align:right;">آخرین تغییر</th>
+                        <th style="color:#FFD700; padding:14px; text-align:right;">عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Filtered)
+                    {
+                        var row = r;
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                            <td style="padding:14px; color:rgba(255,255,255,0.9); font-weight:500;">
+                                @row.ProductTitle
+                                @if (!string.IsNullOrEmpty(row.Unit))
+                                {
+                                    <span style="color:rgba(255,255,255,0.4); font-size:12px;">(@row.Unit)</span>
+                                }
+                            </td>
+                            <td style="padding:14px; color:rgba(255,255,255,0.6);">@row.CategoryName</td>
+                            <td style="padding:14px;">
+                                @if (row.IsOut)
+                                {
+                                    <span style="color:#f44336; font-weight:700;">@row.QuantityOnHand.ToString("N0") — ناموجود</span>
+                                }
+                                else if (row.IsLow)
+                                {
+                                    <span style="color:#FFB800; font-weight:700;">@row.QuantityOnHand.ToString("N0") — کم</span>
+                                }
+                                else
+                                {
+                                    <span style="color:#66bb6a; font-weight:600;">@row.QuantityOnHand.ToString("N0")</span>
+                                }
+                            </td>
+                            <td style="padding:14px; color:rgba(255,255,255,0.5);">@row.ReorderLevel.ToString("N0")</td>
+                            <td style="padding:14px; color:rgba(255,255,255,0.4); font-size:12px;">
+                                @row.LastUpdated.ToString("yyyy/MM/dd HH:mm", culture)
+                            </td>
+                            <td style="padding:14px;">
+                                <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Success" Size="Size.Small"
+                                               OnClick="@(() => OpenAdjustDialog(row))" Title="افزودن / کاهش" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Tune" Color="Color.Warning" Size="Size.Small"
+                                               OnClick="@(() => OpenLevelsDialog(row))" Title="تنظیم حدود" />
+                                <MudIconButton Icon="@Icons.Material.Filled.History" Color="Color.Info" Size="Size.Small"
+                                               OnClick="@(() => NavigationManager.NavigateTo($"/admin/stock-history?productId={row.ProductId}"))"
+                                               Title="تاریخچه" />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    [Inject] private NavigationManager NavigationManager { get; set; } = default!;
+
+    private CultureInfo culture = new("fa-IR");
+    private List<InventoryRowDto> rows = new();
+    private List<Branch> branches = new();
+    private long branchId;
+    private string searchString = "";
+    private bool onlyLow;
+    private bool loading;
+    private Task OpenAdjustDialog() => OpenAdjustDialog((InventoryRowDto?)null);
+    private List<InventoryRowDto> Filtered =>
+        string.IsNullOrWhiteSpace(searchString)
+            ? rows
+            : rows.Where(r =>
+                r.ProductTitle.Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
+                (r.CategoryName?.Contains(searchString, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
+
+    protected override void OnInitialized()
+    {
+        branches = BranchService.GetAll();
+        branchId = branches.FirstOrDefault()?.BranchId ?? 0;
+        Load();
+    }
+
+    private void OnBranchChanged(long value)
+    {
+        branchId = value;
+        Load();
+    }
+
+    private void Load()
+    {
+        loading = true;
+        rows = branchId == 0 ? new() : InventoryService.GetInventory(branchId, null, onlyLow);
+        loading = false;
+    }
+
+    private async Task OpenAdjustDialog(InventoryRowDto? row )
+    {
+        var parameters = new DialogParameters
+        {
+            ["Branches"] = branches,
+            ["DefaultBranchId"] = branchId,
+            ["DefaultProductId"] = row?.ProductId ?? 0
+        };
+        var dialog = await DialogService.ShowAsync<StockAdjustDialog>("", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false });
+
+        var result = await dialog.Result;
+        if (!result.Canceled && result.Data is true)
+        {
+            Load();
+            Snackbar.Add("حرکت انبار ثبت شد", Severity.Success);
+        }
+    }
+
+    private async Task OpenLevelsDialog(InventoryRowDto row)
+    {
+        var parameters = new DialogParameters
+        {
+            ["Row"] = row
+        };
+        var dialog = await DialogService.ShowAsync<StockLevelsDialog>("", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.ExtraSmall, FullWidth = true, BackdropClick = false });
+
+        var result = await dialog.Result;
+        if (!result.Canceled && result.Data is true)
+        {
+            Load();
+            Snackbar.Add("حدود موجودی ذخیره شد", Severity.Success);
+        }
+    }
+}

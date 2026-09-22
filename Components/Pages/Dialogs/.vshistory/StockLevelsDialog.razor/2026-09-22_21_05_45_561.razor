@@ -1,0 +1,60 @@
+﻿@using Lumen.Models
+@using Lumen.Models.Dtos
+@using Lumen.Services.InventoryServices
+@using MudBlazor
+
+@inject IInventoryService InventoryService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6" Style="color:#FFD700; font-weight:700;">تنظیم حدود موجودی</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudStack Spacing="3">
+            <div style="color: #fff;">@Row.ProductTitle — @Row.BranchTitle</div>
+
+            <MudNumericField T="decimal" @bind-Value="reorderLevel"
+                             Label="حد سفارش (زیر این مقدار هشدار)"
+                             Variant="Variant.Outlined" Margin="Margin.Dense" />
+
+            <MudNumericField T="decimal?" @bind-Value="maxStock"
+                             Label="حداکثر موجودی (اختیاری)"
+                             Variant="Variant.Outlined" Margin="Margin.Dense" />
+        </MudStack>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Variant="Variant.Text" OnClick="Cancel">انصراف</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="Save">ذخیره</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public InventoryRowDto Row { get; set; } = new();
+
+    private decimal reorderLevel;
+    private decimal? maxStock;
+
+    protected override void OnInitialized()
+    {
+        reorderLevel = Row.ReorderLevel;
+        maxStock = Row.MaxStock;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        InventoryService.SetLevels(new SetInventoryLevelDto
+        {
+            BranchId = Row.BranchId,
+            ProductId = Row.ProductId,
+            ReorderLevel = reorderLevel,
+            MaxStock = maxStock
+        });
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+}

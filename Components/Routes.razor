@@ -1,6 +1,23 @@
-﻿<Router AppAssembly="typeof(Program).Assembly">
+﻿@using Lumen.Components.Pages.Dialogs
+<Router AppAssembly="typeof(Program).Assembly">
     <Found Context="routeData">
-        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+        <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
+            <NotAuthorized>
+                @if (context.User.Identity?.IsAuthenticated != true)
+                {
+                    <RedirectToLogin />
+                }
+                else
+                {
+                    <div style="padding:40px; text-align:center; color:#f44336;">
+                        شما به این صفحه دسترسی ندارید
+                    </div>
+                }
+            </NotAuthorized>
+            <Authorizing>
+                <p>در حال بررسی دسترسی...</p>
+            </Authorizing>
+        </AuthorizeRouteView>
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
 </Router>

@@ -56,6 +56,16 @@
                    @onclick="CloseSidebar">
                     👥 کاربران
                 </a>
+                <a href="/admin/inventory"
+                   class="nav-link @(IsActive("/admin/inventory") ? "active" : "")"
+                   @onclick="CloseSidebar">
+                    📦 موجودی انبار
+                </a>
+                <a href="/admin/stock-history"
+                   class="nav-link @(IsActive("/admin/stock-history") ? "active" : "")"
+                   @onclick="CloseSidebar">
+                    📊 تاریخچه انبار
+                </a>
                 <MudButton OnClick="Logout" Variant="Variant.Text" Color="Color.Warning">
                     خروج
                 </MudButton>
@@ -72,10 +82,18 @@
                     </button>
                     <span class="page-title">@GetPageTitle()</span>
                 </div>
-                @* <div class="top-bar-right">
-                    <input type="text" placeholder="جستجو..." class="search-input" />
-                    <button class="icon-btn">🔔</button>
-                </div> *@
+                <div class="top-bar-right">
+                    <div class="user-chip">
+                        <span class="user-avatar">@GetInitials(userName)</span>
+                        <div class="user-info">
+                            <span class="user-name">@userName</span>
+                            @if (!string.IsNullOrEmpty(userRole))
+                            {
+                                <span class="user-role">@userRole</span>
+                            }
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Page Content -->
@@ -424,13 +442,65 @@
             padding: 6px 12px;
         }
     }
+
+
+
+    /* ====== USER CHIP (top bar) ====== */
+    .user-chip {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 12px;
+        background: rgba(255, 215, 0, 0.05);
+        border: 1px solid rgba(255, 215, 0, 0.15);
+        border-radius: 30px;
+        transition: all 0.3s ease;
+    }
+
+        .user-chip:hover {
+            border-color: rgba(255, 215, 0, 0.35);
+            background: rgba(255, 215, 0, 0.08);
+        }
+
+    .user-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #FFD700, #FFB800);
+        color: #1a1a1a;
+        font-weight: 700;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+    }
+
+    .user-info {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.2;
+        text-align: right;
+    }
+
+    .user-name {
+        color: #fff;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .user-role {
+        color: rgba(255, 215, 0, 0.7);
+        font-size: 11px;
+    }
 </style>
 
 @code {
     private bool isMobileOpen = false;
     private bool isMobile = false;
     private bool isJSInitialized = false;
-
+    private string userName = "";
+    private string userRole = "";
     private readonly MudTheme _theme = new()
     {
         PaletteDark = new PaletteDark
@@ -493,7 +563,47 @@
             isMobile = false;
             isMobileOpen = true;
         }
+
+        try
+        {
+            var state = await AuthProvider.GetAuthenticationStateAsync();
+            var user = state.User;
+            if (user.Identity?.IsAuthenticated == true)
+            {
+                userName = user.FindFirst("FullName")?.Value
+                           ?? user.Identity.Name
+                           ?? "کاربر";
+
+                var role = user.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "";
+                userRole = RoleLabel(role);
+            }
+        }
+        catch
+        {
+            userName = "کاربر";
+            userRole = "";
+        }
+
     }
+    private static string GetInitials(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "؟";
+        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1)
+            return parts[0].Substring(0, 1).ToUpper();
+        return (parts[0][0].ToString() + parts[^1][0].ToString()).ToUpper();
+    }
+
+    private static string RoleLabel(string role) => role switch
+    {
+        "Owner" => "مدیر",
+        "BranchManager" => "مدیر شعبه",
+        "Cashier" => "صندوق‌دار",
+        "Barista" => "باریستا",
+        "Accountant" => "حسابدار",
+        "MenuAdmin" => "مدیر منو",
+        _ => ""
+    };
     private Task Logout()
     {
         //await SignInManager.SignOutAsync();
@@ -610,6 +720,8 @@
         if (uri.Contains("/orders")) return "مدیریت سفارشات";
         if (uri.Contains("/users")) return "مدیریت کاربران";
         if (uri.Contains("/settings")) return "تنظیمات";
+        if (uri.Contains("/inventory")) return "موجودی انبار";
+        if (uri.Contains("/stock-history")) return "تاریخچه انبار";
         return "داشبورد";
     }
 }

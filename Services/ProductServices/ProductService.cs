@@ -11,15 +11,19 @@ namespace Lumen.Services.ProductServices
         private readonly IProjectEFRepository<ProductCategory> ProductCategoryRepository;
         private readonly IProjectEFRepository<Product> productRepository;
         private readonly IProjectEFRepository<Media> _mediaRepository;
+        private readonly IProjectEFRepository<Branch> _branchRepo;
+        private readonly IProjectEFRepository<BranchInventory> _inventoryRepo;
         private readonly IMediaService _mediaService;
         public ProductService(IMediaService mediaService,IProjectEFRepository<Media> mediaRepository,
-            IProjectEFRepository<ProductCategory> ProductCategoryRepository,
-            IProjectEFRepository<Product> productRepository)
+            IProjectEFRepository<ProductCategory> ProductCategoryRepository, IProjectEFRepository<Branch> branchRepository,
+            IProjectEFRepository<Product> productRepository, IProjectEFRepository<BranchInventory> inventoryRepo)
         {
             this.ProductCategoryRepository = ProductCategoryRepository;
             this.productRepository = productRepository;
             _mediaRepository = mediaRepository;
             _mediaService = mediaService;
+            _branchRepo = branchRepository;
+            _inventoryRepo = inventoryRepo;
         }
         public async Task<long> Create(Product model)
         {
@@ -48,6 +52,20 @@ namespace Lumen.Services.ProductServices
                         await _mediaRepository.InsertAsync(dbMedia);
                         model.Image = outPut.ImageName;
                 }
+            }
+            var branches = _branchRepo.GetQuery().Select(b => b.BranchId).ToList();
+            foreach (var bid in branches)
+            {
+                await _inventoryRepo.InsertAsync(new BranchInventory
+                {
+                    BranchId = bid,
+                    ProductId = creation.ProductId,
+                    QuantityOnHand = 0,
+                    ReorderLevel = 0,
+                    LastUpdated = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
+                    IsDeleted = false
+                });
             }
             return creation.ProductId;
         }

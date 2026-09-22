@@ -49,8 +49,61 @@
                     موجود
                 </label>
             </div>
-
             <!-- قیمت‌ها -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div>
+                    <label style="color: rgba(255,255,255,0.5); font-size: 14px; display: block; margin-bottom: 6px; font-weight: 500;">
+                        قیمت اقتصادی (تومان) *
+                    </label>
+                    <input type="number" @bind="Product.EcoPrice"
+                           placeholder="۰"
+                           style="width: 100%; background: rgba(255,255,255,0.05); border: 2px solid rgba(255,215,0,0.12); border-radius: 12px; color: #fff; padding: 12px 16px; font-family: 'Vazirmatn', sans-serif; font-size: 15px; outline: none;" />
+                </div>
+                <div>
+                    <label style="color: rgba(255,255,255,0.5); font-size: 14px; display: block; margin-bottom: 6px; font-weight: 500;">
+                        قیمت تجاری (تومان)
+                    </label>
+                    <input type="number" @bind="Product.BusinessPrice"
+                           placeholder="اختیاری"
+                           style="width: 100%; background: rgba(255,255,255,0.05); border: 2px solid rgba(255,215,0,0.12); border-radius: 12px; color: #fff; padding: 12px 16px; font-family: 'Vazirmatn', sans-serif; font-size: 15px; outline: none;" />
+                </div>
+            </div>
+
+            <!-- موجودی و واحد -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div>
+                    <label style="color: rgba(255,255,255,0.5); font-size: 14px; display: block; margin-bottom: 6px; font-weight: 500;">
+                        واحد اندازه‌گیری
+                    </label>
+                    <input @bind="Product.Unit"
+                           placeholder="گرم، عدد، لیتر، فنجان..."
+                           style="width: 100%; background: rgba(255,255,255,0.05); border: 2px solid rgba(255,215,0,0.12); border-radius: 12px; color: #fff; padding: 12px 16px; font-family: 'Vazirmatn', sans-serif; font-size: 15px; outline: none;" />
+                </div>
+                <div>
+                    <label style="color: rgba(255,255,255,0.5); font-size: 14px; display: block; margin-bottom: 6px; font-weight: 500;">
+                        بهای تمام‌شده هر واحد (تومان)
+                    </label>
+                    <input type="number" step="0.01" @bind="Product.CurrentUnitCost"
+                           placeholder="۰"
+                           style="width: 100%; background: rgba(255,255,255,0.05); border: 2px solid rgba(255,215,0,0.12); border-radius: 12px; color: #fff; padding: 12px 16px; font-family: 'Vazirmatn', sans-serif; font-size: 15px; outline: none;" />
+                    <div style="color: rgba(255,255,255,0.3); font-size: 12px; margin-top: 4px;">
+                        برای محاسبه سود استفاده می‌شود. با هر خرید انبار به‌طور خودکار به‌روزرسانی می‌شود.
+                    </div>
+                </div>
+            </div>
+
+            <!-- TracksInventory -->
+            <div style="display: flex; align-items: center; gap: 12px; padding: 4px 0;">
+                <label style="color: rgba(255,255,255,0.7); font-size: 15px; display: flex; align-items: center; gap: 10px; cursor: pointer; font-family: 'Vazirmatn', sans-serif;">
+                    <input type="checkbox" @bind="Product.TracksInventory"
+                           style="width: 20px; height: 20px; accent-color: #FFD700; cursor: pointer; border-radius: 4px;" />
+                    موجودی این محصول در انبار ردیابی شود
+                </label>
+            </div>
+            <div style="color: rgba(255,255,255,0.35); font-size: 12px; margin-top: -4px;">
+                اگر تیک را بردارید، هنگام ثبت سفارش موجودی این محصول بررسی و کاهش نمی‌یابد.
+            </div>
+            @* <!-- قیمت‌ها -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                 <div>
                     <label style="color: rgba(255,255,255,0.5); font-size: 14px; display: block; margin-bottom: 6px; font-weight: 500;">
@@ -68,7 +121,7 @@
                            placeholder="اختیاری"
                            style="width: 100%; background: rgba(255,255,255,0.05); border: 2px solid rgba(255,215,0,0.12); border-radius: 12px; color: #fff; padding: 12px 16px; font-family: 'Vazirmatn', sans-serif; font-size: 15px; outline: none; transition: all 0.3s ease;" />
                 </div>
-            </div>
+            </div> *@
 
             <!-- توضیحات -->
             <div>

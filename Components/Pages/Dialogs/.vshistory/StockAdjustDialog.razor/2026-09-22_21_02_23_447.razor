@@ -1,0 +1,109 @@
+﻿@using Lumen.Models
+@using Lumen.Models.Dtos
+@using Lumen.Services.InventoryServices
+@using Lumen.Services.ProductServices
+@using MudBlazor
+
+@inject IStockTransactionService StockService
+@inject IProductService ProductService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6" Style="color:#FFD700; font-weight:700;">ثبت حرکت انبار</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudSelect T="long" @bind-Value="dto.BranchId" Label="شعبه" Variant="Variant.Outlined" Margin="Margin.Dense">
+                @foreach (var b in Branches)
+                {
+                    <MudSelectItem T="long" Value="@b.BranchId">@b.Title</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="long" @bind-Value="dto.ProductId" Label="محصول" Variant="Variant.Outlined" Margin="Margin.Dense">
+                @foreach (var p in products)
+                {
+                    <MudSelectItem T="long" Value="@p.ProductId">@p.Title</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="StockTransactionType" @bind-Value="dto.Type" Label="نوع حرکت" Variant="Variant.Outlined" Margin="Margin.Dense">
+                <MudSelectItem T="StockTransactionType" Value="StockTransactionType.Purchase">خرید / ورود</MudSelectItem>
+                <MudSelectItem T="StockTransactionType" Value="StockTransactionType.Waste">ضایعات</MudSelectItem>
+                <MudSelectItem T="StockTransactionType" Value="StockTransactionType.Return">مرجوعی</MudSelectItem>
+                <MudSelectItem T="StockTransactionType" Value="StockTransactionType.Adjustment">اصلاح (با علامت)</MudSelectItem>
+                <MudSelectItem T="StockTransactionType" Value="StockTransactionType.InitialStock">موجودی اولیه</MudSelectItem>
+            </MudSelect>
+
+            <MudNumericField T="decimal" @bind-Value="dto.Quantity" Label="مقدار"
+                             Variant="Variant.Outlined" Margin="Margin.Dense"
+                             HelperText="برای «اصلاح»، مقدار منفی هم مجاز است" />
+
+            @if (dto.Type == StockTransactionType.Purchase)
+            {
+                <MudNumericField T="decimal?" @bind-Value="dto.UnitCost" Label="قیمت واحد خرید (اختیاری)"
+                                 Variant="Variant.Outlined" Margin="Margin.Dense" />
+            }
+
+            <MudTextField T="string" @bind-Value="dto.Reference" Label="شماره فاکتور / مرجع"
+                          Variant="Variant.Outlined" Margin="Margin.Dense" />
+
+            <MudTextField T="string" @bind-Value="dto.Note" Label="یادداشت"
+                          Variant="Variant.Outlined" Lines="2" Margin="Margin.Dense" />
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true">@errorMessage</MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Variant="Variant.Text" OnClick="Cancel">انصراف</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Warning"
+                   OnClick="Save" Disabled="@saving">
+            @(saving ? "..." : "ثبت")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public List<Branch> Branches { get; set; } = new();
+    [Parameter] public long DefaultBranchId { get; set; }
+    [Parameter] public long DefaultProductId { get; set; }
+
+    private AdjustStockDto dto = new();
+    private List<Product> products = new();
+    private string errorMessage = "";
+    private bool saving;
+
+    protected override void OnInitialized()
+    {
+        dto.BranchId = DefaultBranchId;
+        dto.ProductId = DefaultProductId;
+        products = ProductService.GetAll(null, true);
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        errorMessage = "";
+        saving = true;
+        try
+        {
+            StockService.Adjust(dto);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+}

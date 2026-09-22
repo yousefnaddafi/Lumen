@@ -20,8 +20,18 @@
         {
             <div class="error-message">@errorMessage</div>
         }
-
         <form method="post" action="/admin/login-handler">
+            <div class="form-group">
+                <label>نام کاربری</label>
+                <input type="text" name="username" class="glass-html-input" required />
+            </div>
+            <div class="form-group">
+                <label>رمز عبور</label>
+                <input type="password" name="password" class="glass-html-input" required />
+            </div>
+            <button type="submit" class="btn-glass-primary">ورود به پنل مدیریت</button>
+        </form>
+        @* <form method="post" action="/admin/login-handler">
             <div class="form-group">
                 <label>نام کاربری</label>
                 <MudTextField @bind-Value="username"
@@ -34,7 +44,6 @@
                               Style="color: #fff;"
                               name="username"
                               InputClass="glass-input" />
-                @* <input type="text" name="username" required /> *@
             </div>
             <div class="form-group">
                 <label>رمز عبور</label>
@@ -48,10 +57,9 @@
                               Required ="true"
                               name="password"
                               InputClass="glass-input" />
-                @* <input type="password" name="password" required /> *@
             </div>
             <button type="submit" class="btn-glass-primary">ورود به پنل مدیریت</button>
-        </form>
+        </form> *@
 
 
 
@@ -96,6 +104,30 @@
 </div>
 
 <style>
+
+    .glass-html-input {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.05);
+        border: 2px solid rgba(255, 215, 0, 0.12);
+        border-radius: 12px;
+        color: #fff;
+        padding: 12px 16px;
+        font-size: 15px;
+        outline: none;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+        .glass-html-input:focus {
+            border-color: #FFD700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.05);
+        }
+
+        .glass-html-input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+
     .admin-login-container {
         min-height: 100vh;
         display: flex;
@@ -223,53 +255,68 @@
     private string? password = string.Empty;
     private string errorMessage = "";
     private bool isBusy;
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    public string? ReturnUrl { get; set; }
+    [SupplyParameterFromQuery(Name = "error")]
+    public string? Error { get; set; }
 
-    private async Task HandleLogin()
+
+    protected override void OnInitialized()
     {
-        if (isBusy) return;
-        isBusy = true;
-        errorMessage = "";
-
-        try
+        errorMessage = Error switch
         {
-            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
-            {
-                errorMessage = "نام کاربری و رمز عبور را وارد کنید";
-                return;
-            }
-
-            // Identity uses UserName or Email. We pass UserName.
-            var result = await SignInManager.PasswordSignInAsync(
-                userName: username!,
-                password: password!,
-                isPersistent: true,
-                lockoutOnFailure: true);
-
-            if (result.Succeeded)
-            {
-                NavigationManager.NavigateTo("/admin/products", forceLoad: false);
-                return;
-            }
-
-            if (result.IsLockedOut)
-                errorMessage = "حساب کاربری موقتاً قفل شده است. لطفاً بعداً تلاش کنید.";
-            else if (result.IsNotAllowed)
-                errorMessage = "ورود برای این حساب مجاز نیست.";
-            else
-                errorMessage = "نام کاربری یا رمز عبور اشتباه است";
-
-            password = "";
-        }
-        catch (Exception ex)
-        {
-            errorMessage = "خطای غیرمنتظره در ورود";
-            Console.WriteLine(ex);
-        }
-        finally
-        {
-            isBusy = false;
-        }
+            "invalid" => "نام کاربری یا رمز عبور اشتباه است",
+            "locked" => "حساب کاربری موقتاً قفل شده است",
+            "inactive" => "حساب کاربری غیرفعال است",
+            _ => ""
+        };
     }
+    // private async Task HandleLogin()
+    // {
+    //     if (isBusy) return;
+    //     isBusy = true;
+    //     errorMessage = "";
+
+    //     try
+    //     {
+    //         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+    //         {
+    //             errorMessage = "نام کاربری و رمز عبور را وارد کنید";
+    //             return;
+    //         }
+
+    //         // Identity uses UserName or Email. We pass UserName.
+    //         var result = await SignInManager.PasswordSignInAsync(
+    //             userName: username!,
+    //             password: password!,
+    //             isPersistent: true,
+    //             lockoutOnFailure: true);
+
+    //         if (result.Succeeded)
+    //         {
+    //             NavigationManager.NavigateTo("/admin/products", forceLoad: false);
+    //             return;
+    //         }
+
+    //         if (result.IsLockedOut)
+    //             errorMessage = "حساب کاربری موقتاً قفل شده است. لطفاً بعداً تلاش کنید.";
+    //         else if (result.IsNotAllowed)
+    //             errorMessage = "ورود برای این حساب مجاز نیست.";
+    //         else
+    //             errorMessage = "نام کاربری یا رمز عبور اشتباه است";
+
+    //         password = "";
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         errorMessage = "خطای غیرمنتظره در ورود";
+    //         Console.WriteLine(ex);
+    //     }
+    //     finally
+    //     {
+    //         isBusy = false;
+    //     }
+    // }
 }
 @* @code {
     private string? username = string.Empty;

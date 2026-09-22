@@ -1,0 +1,351 @@
+﻿@page "/admin/login"
+@* @rendermode InteractiveServer *@
+@using Lumen.Models
+@using Microsoft.AspNetCore.Identity
+@using MudBlazor
+@inject NavigationManager NavigationManager
+@inject SignInManager<AppUser> SignInManager
+@inject UserManager<AppUser> UserManager
+@inject AuthenticationStateProvider AuthProvider
+@inject CurrentUserState UserState
+ 
+<div class="admin-login-container">
+    <div class="glass-card login-card">
+        <div class="login-header">
+            <h1>☕ لومن | پنل مدیریت</h1>
+            <p>به پنل مدیریت منوی کافه لومن خوش آمدید</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="error-message">@errorMessage</div>
+        }
+        <form method="post" action="/admin/login-handler">
+            <div class="form-group">
+                <label>نام کاربری</label>
+                <input type="text" name="username" class="glass-html-input" required />
+            </div>
+            <div class="form-group">
+                <label>رمز عبور</label>
+                <input type="password" name="password" class="glass-html-input" required />
+            </div>
+            <button type="submit" class="btn-glass-primary">ورود به پنل مدیریت</button>
+        </form>
+        @* <form method="post" action="/admin/login-handler">
+            <div class="form-group">
+                <label>نام کاربری</label>
+                <MudTextField @bind-Value="username"
+                              Class="glass-input"
+                              Placeholder="نام کاربری خود را وارد کنید"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              required="true"
+                              InputType="InputType.Text"
+                              Style="color: #fff;"
+                              name="username"
+                              InputClass="glass-input" />
+            </div>
+            <div class="form-group">
+                <label>رمز عبور</label>
+                <MudTextField @bind-Value="password"
+                              Class="glass-input"
+                              Placeholder="رمز عبور خود را وارد کنید"
+                              InputType="InputType.Password"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Style="color: #fff;"
+                              Required ="true"
+                              name="password"
+                              InputClass="glass-input" />
+            </div>
+            <button type="submit" class="btn-glass-primary">ورود به پنل مدیریت</button>
+        </form> *@
+
+
+
+        @* <div class="form-group">
+            <label>نام کاربری</label>
+            <MudTextField @bind-Value="username"
+                          Class="glass-input"
+                          Placeholder="نام کاربری خود را وارد کنید"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Style="color: #fff;"
+                          InputClass="glass-input" />
+        </div>
+
+        <div class="form-group">
+            <label>رمز عبور</label>
+            <MudTextField @bind-Value="password"
+                          Class="glass-input"
+                          Placeholder="رمز عبور خود را وارد کنید"
+                          InputType="InputType.Password"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Style="color: #fff;"
+                          InputClass="glass-input" />
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="error-message">@errorMessage</div>
+        }
+
+        <MudButton ButtonType="ButtonType.Submit"
+                   Variant="Variant.Filled"
+                   Color="Color.Warning"
+                   OnClick="@HandleLogin"
+                   FullWidth="true"
+                   Class="btn-glass-primary"
+                   Style="margin-top: 8px;">
+            ورود به پنل مدیریت
+        </MudButton> *@
+    </div>
+</div>
+
+<style>
+
+    .glass-html-input {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.05);
+        border: 2px solid rgba(255, 215, 0, 0.12);
+        border-radius: 12px;
+        color: #fff;
+        padding: 12px 16px;
+        font-size: 15px;
+        outline: none;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+        .glass-html-input:focus {
+            border-color: #FFD700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.05);
+        }
+
+        .glass-html-input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+
+    .admin-login-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
+        padding: 20px;
+    }
+
+    .login-card {
+        max-width: 420px;
+        width: 100%;
+        padding: 40px;
+        background: rgba(255, 255, 255, 0.05) !important;
+        backdrop-filter: blur(20px) !important;
+        border: 1px solid rgba(255, 215, 0, 0.1) !important;
+        border-radius: 24px !important;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
+    }
+
+    .login-header {
+        text-align: center;
+        margin-bottom: 32px;
+    }
+
+        .login-header h1 {
+            color: #fff;
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+            background: linear-gradient(135deg, #FFD700, #FFB800);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .login-header p {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 14px;
+            margin: 0;
+        }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+        .form-group label {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+    .glass-input .mud-input-root {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 2px solid rgba(255, 215, 0, 0.12) !important;
+        border-radius: 12px !important;
+        color: #fff !important;
+        padding: 12px 16px !important;
+    }
+
+        .glass-input .mud-input-root:focus {
+            border-color: #FFD700 !important;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.05) !important;
+        }
+
+        .glass-input .mud-input-root input {
+            color: #fff !important;
+        }
+
+            .glass-input .mud-input-root input::placeholder {
+                color: rgba(255, 255, 255, 0.3) !important;
+            }
+
+    .error-message {
+        color: #f44336;
+        background: rgba(244, 67, 54, 0.1);
+        padding: 10px 16px;
+        border-radius: 12px;
+        margin-bottom: 16px;
+        font-size: 14px;
+        text-align: center;
+        border: 1px solid rgba(244, 67, 54, 0.2);
+    }
+
+    .btn-glass-primary {
+        background: linear-gradient(135deg, #FFD700 0%, #FFB800 100%) !important;
+        color: #1a1a1a !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 14px !important;
+        font-weight: 700 !important;
+        cursor: pointer !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 4px 20px rgba(255, 215, 0, 0.2) !important;
+        font-family: 'Vazirmatn', sans-serif !important;
+        text-transform: none !important;
+        font-size: 16px !important;
+    }
+
+        .btn-glass-primary:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 8px 30px rgba(255, 215, 0, 0.3) !important;
+        }
+
+    /* Fix MudBlazor input styles */
+    .mud-input {
+        color: #fff !important;
+    }
+
+    .mud-input-root {
+        color: #fff !important;
+    }
+
+        .mud-input-root input {
+            color: #fff !important;
+        }
+
+            .mud-input-root input::placeholder {
+                color: rgba(255, 255, 255, 0.3) !important;
+            }
+</style>
+@code {
+    private string? username = string.Empty;
+    private string? password = string.Empty;
+    private string errorMessage = "";
+    private bool isBusy;
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    public string? ReturnUrl { get; set; }
+    [SupplyParameterFromQuery(Name = "error")]
+    public string? Error { get; set; }
+
+
+    protected override void OnInitialized()
+    {
+        errorMessage = Error switch
+        {
+            "invalid" => "نام کاربری یا رمز عبور اشتباه است",
+            "locked" => "حساب کاربری موقتاً قفل شده است",
+            "inactive" => "حساب کاربری غیرفعال است",
+            _ => ""
+        };
+    }
+    // private async Task HandleLogin()
+    // {
+    //     if (isBusy) return;
+    //     isBusy = true;
+    //     errorMessage = "";
+
+    //     try
+    //     {
+    //         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+    //         {
+    //             errorMessage = "نام کاربری و رمز عبور را وارد کنید";
+    //             return;
+    //         }
+
+    //         // Identity uses UserName or Email. We pass UserName.
+    //         var result = await SignInManager.PasswordSignInAsync(
+    //             userName: username!,
+    //             password: password!,
+    //             isPersistent: true,
+    //             lockoutOnFailure: true);
+
+    //         if (result.Succeeded)
+    //         {
+    //             NavigationManager.NavigateTo("/admin/products", forceLoad: false);
+    //             return;
+    //         }
+
+    //         if (result.IsLockedOut)
+    //             errorMessage = "حساب کاربری موقتاً قفل شده است. لطفاً بعداً تلاش کنید.";
+    //         else if (result.IsNotAllowed)
+    //             errorMessage = "ورود برای این حساب مجاز نیست.";
+    //         else
+    //             errorMessage = "نام کاربری یا رمز عبور اشتباه است";
+
+    //         password = "";
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         errorMessage = "خطای غیرمنتظره در ورود";
+    //         Console.WriteLine(ex);
+    //     }
+    //     finally
+    //     {
+    //         isBusy = false;
+    //     }
+    // }
+}
+@* @code {
+    private string? username = string.Empty;
+    private string? password = string.Empty;
+    private string errorMessage = "";
+
+
+    // private LoginModel loginModel = new();
+    // private string errorMessage = "";
+
+    private async Task HandleLogin()
+    {
+        Console.WriteLine($"Username: {username}, Password: {password}");
+
+        if (username == "admin" && password == "LumenCafe2026")
+        {
+            NavigationManager.NavigateTo("/admin/products");
+        }
+        else
+        {
+            errorMessage = "نام کاربری یا رمز عبور اشتباه است";
+            password = "";
+            StateHasChanged();
+        }
+    }
+    
+    public class LoginModel
+    {
+        public string? Username { get; set; }
+        public string? Password { get; set; }
+    }
+} *@

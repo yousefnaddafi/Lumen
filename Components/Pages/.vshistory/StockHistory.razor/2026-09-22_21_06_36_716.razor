@@ -1,0 +1,198 @@
+﻿@page "/admin/stock-history"
+@attribute [Authorize(Roles = "Owner,BranchManager,Accountant")]
+@rendermode InteractiveServer
+@layout Components.Layout.AdminLayout
+@using Lumen.Models
+@using Lumen.Models.Dtos
+@using Lumen.Services.BranchServices
+@using Lumen.Services.InventoryServices
+@using Lumen.Services.ProductServices
+@using MudBlazor
+@using System.Globalization
+@inject IStockTransactionService StockService
+@inject IBranchService BranchService
+@inject IProductService ProductService
+
+<PageTitle>تاریخچه انبار - پنل قهوه</PageTitle>
+
+<div style="width:100%;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
+        <div>
+            <h3 style="margin:0; background: linear-gradient(135deg,#FFD700,#FFB800); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-size:28px; font-weight:700;">
+                📊 تاریخچه حرکات انبار
+            </h3>
+            <p style="color: rgba(255,255,255,0.4); margin:4px 0 0 0; font-size:14px;">همه ورود و خروج‌های موجودی</p>
+        </div>
+        <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                   OnClick="@(() => Nav.NavigateTo("/admin/inventory"))">
+            ← بازگشت به موجودی
+        </MudButton>
+    </div>
+
+    <div style="display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; align-items:end;">
+        <MudSelect T="long" @bind-Value="branchId" Label="شعبه" Variant="Variant.Outlined"
+                   Style="min-width:200px;" ValueChanged="@((long v) => { branchId = v; Load(); })">
+            <MudSelectItem T="long" Value="0L">همه شعبه‌ها</MudSelectItem>
+            @foreach (var b in branches)
+            {
+                <MudSelectItem T="long" Value="@b.BranchId">@b.Title</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudSelect T="long" @bind-Value="productId" Label="محصول" Variant="Variant.Outlined"
+                   Style="min-width:220px;" ValueChanged="@((long v) => { productId = v; Load(); })">
+            <MudSelectItem T="long" Value="0L">همه محصولات</MudSelectItem>
+            @foreach (var p in products)
+            {
+                <MudSelectItem T="long" Value="@p.ProductId">@p.Title</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudSelect T="StockTransactionType?" @bind-Value="typeFilter" Label="نوع" Variant="Variant.Outlined"
+                   Style="min-width:160px;" ValueChanged="@((StockTransactionType? v) => { typeFilter = v; Load(); })">
+            <MudSelectItem T="StockTransactionType?" Value="(StockTransactionType?)null">همه</MudSelectItem>
+            <MudSelectItem T="StockTransactionType?" Value="StockTransactionType.Purchase">خرید</MudSelectItem>
+            <MudSelectItem T="StockTransactionType?" Value="StockTransactionType.Sale">فروش</MudSelectItem>
+            <MudSelectItem T="StockTransactionType?" Value="StockTransactionType.Waste">ضایعات</MudSelectItem>
+            <MudSelectItem T="StockTransactionType?" Value="StockTransactionType.Return">مرجوعی</MudSelectItem>
+            <MudSelectItem T="StockTransactionType?" Value="StockTransactionType.Adjustment">اصلاح</MudSelectItem>
+            <MudSelectItem T="StockTransactionType?" Value="StockTransactionType.InitialStock">موجودی اولیه</MudSelectItem>
+        </MudSelect>
+
+        <MudDatePicker @bind-Date="fromDate" Label="از" Immediate="true"
+                       DateChanged="@((DateTime? d) => { fromDate = d; Load(); })" />
+        <MudDatePicker @bind-Date="toDate" Label="تا" Immediate="true"
+                       DateChanged="@((DateTime? d) => { toDate = d; Load(); })" />
+
+        <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="ClearFilters">پاک کردن</MudButton>
+    </div>
+
+    @if (loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Warning" />
+    }
+    else if (rows.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info">هیچ حرکتی با این فیلترها یافت نشد.</MudAlert>
+    }
+    else
+    {
+        <div style="background: rgba(255,255,255,0.02); border-radius:16px; border:1px solid rgba(255,255,255,0.03); overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; min-width:900px;">
+                <thead style="background: rgba(255,215,0,0.05);">
+                    <tr>
+                        <th style="color:#FFD700; padding:14px; text-align:right;">تاریخ</th>
+                        <th style="color:#FFD700; padding:14px; text-align:right;">شعبه</th>
+                        <th style="color:#FFD700; padding:14px; text-align:right;">محصول</th>
+                        <th style="color:#FFD700; padding:14px; text-align:right;">نوع</th>
+                        <th style="color:#FFD700; padding:14px; text-align:right;">مقدار</th>
+                        <th style="color:#FFD700; padding:14px; text-align:right;">موجودی پس از</th>
+                        <th style="color:#FFD700; padding:14px; text-align:right;">کاربر</th>
+                        <th style="color:#FFD700; padding:14px; text-align:right;">یادداشت</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in rows)
+                    {
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                            <td style="padding:14px; color:rgba(255,255,255,0.7); font-size:13px;">
+                                @r.CreatedAt.ToLocalTime().ToString("yyyy/MM/dd HH:mm", culture)
+                            </td>
+                            <td style="padding:14px; color:rgba(255,255,255,0.7);">@r.BranchTitle</td>
+                            <td style="padding:14px; color:rgba(255,255,255,0.9);">@r.ProductTitle</td>
+                            <td style="padding:14px;">
+                                <MudChip T="string" Size="Size.Small"
+                                         Color="@TypeColor(r.Type)"
+                                         Variant="Variant.Outlined">
+                                    @TypeLabel(r.Type)
+                                </MudChip>
+                            </td>
+                            <td style="padding:14px; font-weight:700;
+                                       color:@(r.Quantity >= 0 ? "#66bb6a" : "#f44336");">
+                                @(r.Quantity >= 0 ? "+" : "")@r.Quantity.ToString("N0")
+                            </td>
+                            <td style="padding:14px; color:rgba(255,255,255,0.7);">@r.BalanceAfter.ToString("N0")</td>
+                            <td style="padding:14px; color:rgba(255,255,255,0.55); font-size:13px;">
+                                @(string.IsNullOrEmpty(r.CreatedByName) ? "—" : r.CreatedByName)
+                            </td>
+                            <td style="padding:14px; color:rgba(255,255,255,0.45); font-size:12px;">
+                                @r.Note
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    private CultureInfo culture = new("fa-IR");
+    private List<StockTransactionRowDto> rows = new();
+    private List<Branch> branches = new();
+    private List<Product> products = new();
+
+    private long branchId;
+    private long productId;
+    private StockTransactionType? typeFilter;
+    private DateTime? fromDate;
+    private DateTime? toDate;
+    private bool loading;
+
+    protected override void OnInitialized()
+    {
+        branches = BranchService.GetAll();
+        products = ProductService.GetAll(null, null);
+        Load();
+    }
+
+    private void Load()
+    {
+        loading = true;
+        rows = StockService.GetHistory(
+            branchId > 0 ? branchId : null,
+            productId > 0 ? productId : null,
+            fromDate,
+            toDate,
+            typeFilter);
+        loading = false;
+    }
+
+    private void ClearFilters()
+    {
+        branchId = 0;
+        productId = 0;
+        typeFilter = null;
+        fromDate = null;
+        toDate = null;
+        Load();
+    }
+
+    private static string TypeLabel(StockTransactionType t) => t switch
+    {
+        StockTransactionType.Purchase => "خرید",
+        StockTransactionType.Sale => "فروش",
+        StockTransactionType.Waste => "ضایعات",
+        StockTransactionType.Return => "مرجوعی",
+        StockTransactionType.Adjustment => "اصلاح",
+        StockTransactionType.TransferIn => "انتقال ورودی",
+        StockTransactionType.TransferOut => "انتقال خروجی",
+        StockTransactionType.InitialStock => "موجودی اولیه",
+        _ => "—"
+    };
+
+    private static Color TypeColor(StockTransactionType t) => t switch
+    {
+        StockTransactionType.Purchase => Color.Success,
+        StockTransactionType.Sale => Color.Info,
+        StockTransactionType.Waste => Color.Error,
+        StockTransactionType.Return => Color.Warning,
+        StockTransactionType.Adjustment => Color.Default,
+        StockTransactionType.TransferIn => Color.Success,
+        StockTransactionType.TransferOut => Color.Error,
+        StockTransactionType.InitialStock => Color.Primary,
+        _ => Color.Default
+    };
+}

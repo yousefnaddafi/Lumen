@@ -1,0 +1,204 @@
+﻿@page "/admin/recipes"
+@attribute [Authorize(Roles = "Owner,MenuAdmin,BranchManager")]
+@rendermode InteractiveServer
+@layout Components.Layout.AdminLayout
+@using Lumen.Models
+@using Lumen.Services.ProductServices
+@using Lumen.Services.RecipeServices
+@using MudBlazor
+
+<PageTitle>رسپی‌ها - پنل قهوه</PageTitle>
+
+<div style="display:grid; grid-template-columns: 320px 1fr; gap:16px; height: calc(100vh - 160px);">
+    <!-- Left: menu items -->
+    <div style="background: rgba(255,255,255,0.02); border-radius:16px; border:1px solid rgba(255,255,255,0.03); display:flex; flex-direction:column; overflow:hidden;">
+        <div style="padding:12px; border-bottom:1px solid rgba(255,215,0,0.08);">
+            <input @bind="itemSearch" @bind:event="oninput" placeholder="جستجو..."
+                   style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,215,0,0.15); border-radius:10px; color:#fff; padding:10px;" />
+        </div>
+        <div style="overflow-y:auto; flex:1;">
+            @foreach (var p in FilteredMenuItems)
+            {
+                <div class="recipe-item @(selectedProductId == p.ProductId ? "active" : "")"
+                     @onclick="() => SelectProduct(p.ProductId)">
+                    <span>@p.Title</span>
+                    @if (RecipeCountFor(p.ProductId) > 0)
+                    {
+                        <span class="recipe-count">@RecipeCountFor(p.ProductId)</span>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Right: editor -->
+    <div style="background: rgba(255,255,255,0.02); border-radius:16px; border:1px solid rgba(255,255,255,0.03); padding:20px; overflow-y:auto;">
+        @if (selectedProduct == null)
+        {
+            <MudAlert Severity="Severity.Info">یک محصول از سمت راست انتخاب کنید.</MudAlert>
+        }
+        else
+        {
+            <h3 style="color:#FFD700;">رسپی «@selectedProduct.Title»</h3>
+            <p style="color:rgba(255,255,255,0.4); font-size:13px;">
+                اجزایی که با فروش این محصول از انبار کسر می‌شوند.
+            </p>
+
+            <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="AddComponent" Class="mt-3">
+                + افزودن جزء
+            </MudButton>
+
+            <table style="width:100%; margin-top:20px; color:#fff; border-collapse:collapse;">
+                <thead>
+                    <tr style="border-bottom:1px solid rgba(255,215,0,0.15);">
+                        <th style="text-align:right; padding:8px;">جزء</th>
+                        <th style="text-align:right; padding:8px;">مقدار</th>
+                        <th style="text-align:right; padding:8px;">شرط</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in recipeRows)
+                    {
+                        var r = row;
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                            <td style="padding:8px;">
+                                <MudSelect T="long" @bind-Value="r.ComponentProductId" Style="min-width:220px;">
+                                    @foreach (var c in components)
+                                    {
+                                        <MudSelectItem T="long" Value="@c.ProductId">@c.Title</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </td>
+                            <td style="padding:8px;">
+                                <MudNumericField T="decimal" @bind-Value="r.Quantity" Min="0.01m" Style="width:130px;" />
+                            </td>
+                            <td style="padding:8px;">
+                                <MudSelect T="RecipeCondition" @bind-Value="r.Condition" Style="min-width:160px;">
+                                    <MudSelectItem T="RecipeCondition" Value="RecipeCondition.Always">همیشه</MudSelectItem>
+                                    <MudSelectItem T="RecipeCondition" Value="RecipeCondition.TakeawayOnly">فقط بیرون‌بر</MudSelectItem>
+                                    <MudSelectItem T="RecipeCondition" Value="RecipeCondition.DineInOnly">فقط سالن</MudSelectItem>
+                                </MudSelect>
+                            </td>
+                            <td style="padding:8px;">
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                               OnClick="@(() => recipeRows.Remove(r))" />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="SaveRecipe" Class="mt-3">
+                ذخیره رسپی
+            </MudButton>
+        }
+    </div>
+</div>
+
+<style>
+    .recipe-item {
+        padding: 12px 16px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: rgba(255,255,255,0.7);
+        border-bottom: 1px solid rgba(255,255,255,0.03);
+    }
+
+        .recipe-item:hover {
+            background: rgba(255,215,0,0.05);
+            color: #FFD700;
+        }
+
+        .recipe-item.active {
+            background: rgba(255,215,0,0.1);
+            color: #FFD700;
+            border-right: 3px solid #FFD700;
+        }
+
+    .recipe-count {
+        background: rgba(255,215,0,0.2);
+        color: #FFD700;
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 10px;
+    }
+</style>
+
+@code {
+    [Inject] private IProductService ProductService { get; set; } = default!;
+    [Inject] private IRecipeService RecipeService { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+
+    private List<Product> allProducts = new();
+    private List<Product> menuItems = new();
+    private List<Product> components = new();
+    private long selectedProductId;
+    private Product? selectedProduct;
+    private List<ProductRecipe> recipeRows = new();
+    private string itemSearch = "";
+
+    protected override void OnInitialized()
+    {
+        allProducts = ProductService.GetAll(null, null);
+        menuItems = allProducts.Where(p => p.Kind == ProductKind.MenuItem).ToList();
+        components = allProducts.Where(p =>
+            p.Kind == ProductKind.RawMaterial ||
+            p.Kind == ProductKind.Packaging ||
+            p.Kind == ProductKind.Supply ||
+            p.Kind == ProductKind.Other ||
+            p.Kind == ProductKind.MenuItem).ToList();   // allow cross-menu (e.g. add shot)
+    }
+
+    private List<Product> FilteredMenuItems =>
+        string.IsNullOrWhiteSpace(itemSearch)
+            ? menuItems
+            : menuItems.Where(p => p.Title.Contains(itemSearch, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    private int RecipeCountFor(long productId) =>
+        RecipeService.GetForProduct(productId).Count;
+
+    private void SelectProduct(long productId)
+    {
+        selectedProductId = productId;
+        selectedProduct = menuItems.FirstOrDefault(p => p.ProductId == productId);
+        recipeRows = RecipeService.GetForProduct(productId)
+            .Select(r => new ProductRecipe
+            {
+                ProductRecipeId = r.ProductRecipeId,
+                ParentProductId = r.ParentProductId,
+                ComponentProductId = r.ComponentProductId,
+                Quantity = r.Quantity,
+                Condition = r.Condition,
+                Note = r.Note
+            })
+            .ToList();
+    }
+
+    private void AddComponent()
+    {
+        recipeRows.Add(new ProductRecipe
+        {
+            ParentProductId = selectedProductId,
+            ComponentProductId = components.FirstOrDefault()?.ProductId ?? 0,
+            Quantity = 1,
+            Condition = RecipeCondition.Always
+        });
+    }
+
+    private void SaveRecipe()
+    {
+        if (selectedProductId == 0) return;
+        try
+        {
+            RecipeService.SaveRecipe(selectedProductId, recipeRows);
+            Snackbar.Add("رسپی ذخیره شد", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("خطا: " + ex.Message, Severity.Error);
+        }
+    }
+}

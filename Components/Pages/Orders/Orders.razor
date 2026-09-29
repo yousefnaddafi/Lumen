@@ -91,7 +91,9 @@
 
     protected override void OnInitialized()
     {
-        branches = BranchService.GetAll();
+        // branches = BranchService.GetAll();
+        // branchId = branches.FirstOrDefault()?.BranchId ?? 0;
+        branches = BranchService.GetMyBranches();
         branchId = branches.FirstOrDefault()?.BranchId ?? 0;
         Load();
     }

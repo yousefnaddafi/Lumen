@@ -1,0 +1,128 @@
+﻿@using Lumen.Models
+@using Lumen.Models.Enums
+@using Lumen.Services.LedgerServices
+@using MudBlazor
+
+@inject ILedgerService LedgerService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6" Style="color:#FFD700; font-weight:700;">
+            فایل‌های پیوست — @Entry.CategoryTitle
+        </MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <div style="margin-bottom:16px;">
+            <InputFile accept="image/*,.pdf" OnChange="HandleFileSelected"
+                       style="width:100%; background:rgba(255,255,255,0.05); border:2px dashed rgba(255,215,0,0.15); border-radius:12px; color:#fff; padding:12px; cursor:pointer;" />
+            @if (uploading)
+            {
+                <div style="color:rgba(255,255,255,0.5); margin-top:6px; font-size:12px;">
+                    در حال آپلود...
+                </div>
+            }
+        </div>
+
+        @if (attachments.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info" Dense="true">هیچ فایلی پیوست نشده است.</MudAlert>
+        }
+        else
+        {
+            <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:12px;">
+                @foreach (var att in attachments)
+                {
+                    var a = att;
+                    var url = $"media/gallery/Ledger/{a.PictureUrl}";
+                    <div style="position:relative; border-radius:12px; overflow:hidden; border:1px solid rgba(255,215,0,0.15);">
+                        <a href="@url" target="_blank">
+                            @if (a.PictureUrl?.ToLower().EndsWith(".pdf") == true)
+                            {
+                                <div style="display:flex; align-items:center; justify-content:center; height:120px; background:rgba(0,0,0,0.4); color:#FFD700; font-size:32px;">
+                                    📄
+                                </div>
+                            }
+                            else
+                            {
+                                <img src="@url" style="width:100%; height:120px; object-fit:cover; display:block;" />
+                            }
+                        </a>
+                        <button @onclick="() => RemoveAttachment(a.MediaId)"
+                                style="position:absolute; top:6px; right:6px; background:#f44336; color:#fff; border:none; border-radius:50%; width:26px; height:26px; cursor:pointer;">
+                            ×
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mt-3">@errorMessage</MudAlert>
+        }
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Variant="Variant.Text" OnClick="Close">بستن</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public LedgerEntryDto Entry { get; set; } = new();
+
+    private List<Media> attachments = new();
+    private string errorMessage = "";
+    private bool uploading;
+
+    protected override void OnInitialized()
+    {
+        Load();
+    }
+
+    private void Load() => attachments = LedgerService.GetAttachments(Entry.CashLedgerEntryId);
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        errorMessage = "";
+        uploading = true;
+        try
+        {
+            var file = e.File;
+            if (file == null) return;
+            if (file.Size > 5 * 1024 * 1024)
+            {
+                errorMessage = "حجم فایل نباید بیشتر از ۵ مگابایت باشد";
+                return;
+            }
+
+            using var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            var bytes = ms.ToArray();
+            var base64 = $"data:{file.ContentType};base64,{Convert.ToBase64String(bytes)}";
+
+            LedgerService.AddAttachment(Entry.CashLedgerEntryId, base64, file.Name);
+            Load();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "خطا: " + ex.Message;
+        }
+        finally
+        {
+            uploading = false;
+        }
+    }
+
+    private void RemoveAttachment(long mediaId)
+    {
+        LedgerService.DeleteAttachment(mediaId);
+        Load();
+    }
+
+    private void Close() => MudDialog.Close(DialogResult.Ok(true));
+}

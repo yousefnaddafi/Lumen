@@ -66,6 +66,31 @@
                    @onclick="CloseSidebar">
                     📊 تاریخچه انبار
                 </a>
+                <a href="/admin/recipes"
+                   class="nav-link @(IsActive("/admin/recipes") ? "active" : "")"
+                   @onclick="CloseSidebar">
+                    🧪 رسپی‌ها
+                </a>
+                <a href="/admin/branch-menu"
+                   class="nav-link @(IsActive("/admin/branch-menu") ? "active" : "")"
+                   @onclick="CloseSidebar">
+                    🍽️ منوی شعبه
+                </a>
+                <a href="/admin/ledger/categories"
+                   class="nav-link @(IsActive("/admin/ledger/categories") ? "active" : "")"
+                   @onclick="CloseSidebar">
+                    🏷️ دسته‌های حسابداری
+                </a>
+                <a href="/admin/ledger"
+                   class="nav-link @(IsActive("/admin/ledger") ? "active" : "")"
+                   @onclick="CloseSidebar">
+                    💰 حسابداری
+                </a>
+                <a href="/admin/reports"
+                   class="nav-link @(IsActive("/admin/reports") ? "active" : "")"
+                   @onclick="CloseSidebar">
+                    📊 گزارشات
+                </a>
                 <MudButton OnClick="Logout" Variant="Variant.Text" Color="Color.Warning">
                     خروج
                 </MudButton>
@@ -722,6 +747,11 @@
         if (uri.Contains("/settings")) return "تنظیمات";
         if (uri.Contains("/inventory")) return "موجودی انبار";
         if (uri.Contains("/stock-history")) return "تاریخچه انبار";
+        if (uri.Contains("/recipes")) return "مدیریت رسپی‌ها";
+        if (uri.Contains("/branch-menu")) return "منوی شعبه";
+        if (uri.Contains("/ledger/categories")) return "دسته‌بندی‌های حسابداری";
+        if (uri.Contains("/ledger")) return "حسابداری";
+        if (uri.Contains("/reports")) return "گزارشات";
         return "داشبورد";
     }
 }

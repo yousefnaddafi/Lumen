@@ -1,12 +1,15 @@
 ﻿using Lumen.InfraStructure;
 using Lumen.Models;
+using Lumen.Services.BranchAvailabilityServices;
 using Lumen.Services.BranchServices;
 using Lumen.Services.CustomerServices;
 using Lumen.Services.InventoryServices;
+using Lumen.Services.LedgerServices;
 using Lumen.Services.MediaServices;
 using Lumen.Services.OrderServices;
 using Lumen.Services.ProductCatgoryServices;
 using Lumen.Services.ProductServices;
+using Lumen.Services.RecipeServices;
 using Lumen.Services.UserServices;
 using Microsoft.IdentityModel.Tokens;
 using System.Text.RegularExpressions;
@@ -38,6 +41,9 @@ namespace Lumen.Extensions
             services.AddScoped<IProjectEFRepository<UserActionLog>, ProjectEFRepository<UserActionLog>>();
             services.AddScoped<IProjectEFRepository<UserBranch>, ProjectEFRepository<UserBranch>>();
             services.AddScoped<IProjectEFRepository<CashLedgerEntry>, ProjectEFRepository<CashLedgerEntry>>();
+            services.AddScoped<IProjectEFRepository<ProductRecipe>, ProjectEFRepository<ProductRecipe>>();
+            services.AddScoped<IProjectEFRepository<BranchProductAvailability>, ProjectEFRepository<BranchProductAvailability>>();
+            services.AddScoped<IProjectEFRepository<BranchProductAvailability>, ProjectEFRepository<BranchProductAvailability>>();
 
         }
 
@@ -55,6 +61,9 @@ namespace Lumen.Extensions
             services.AddScoped<IUserAdminService, UserAdminService>();
             services.AddScoped<IInventoryService, InventoryService>();
             services.AddScoped<IStockTransactionService, StockTransactionService>();
+            services.AddScoped<IRecipeService, RecipeService>();
+            services.AddScoped<IBranchAvailabilityService, BranchAvailabilityService>();
+            services.AddScoped<ILedgerService, LedgerService>();
             //services.AddTransient(typeof(IGenerateJwtService), typeof(GenerateJwtService));
             //services.AddTransient(typeof(IConfirmationCodeSetting), typeof(ConfirmationCodeSetting));
             //services.AddTransient(typeof(IEncryptService), typeof(EncryptService));

@@ -50,6 +50,9 @@ namespace Lumen.InfraStructure
 
         public DbSet<Customer> Customers { get; set; } = null!;
 
+        public DbSet<ProductRecipe> ProductRecipes { get; set; } = null!;
+        public DbSet<BranchProductAvailability> BranchProductAvailabilities { get; set; } = null!;
+
         protected override void OnModelCreating(ModelBuilder b)
         {
             // Always call base first — IdentityDbContext configures the AspNet* tables.
@@ -71,7 +74,24 @@ namespace Lumen.InfraStructure
                     b.Entity(entityType.ClrType).HasQueryFilter(filter);
                 }
             }
+            b.Entity<BranchProductAvailability>(e =>
+            {
+                e.ToTable("BranchProductAvailabilities", "dbo");
+                e.HasKey(x => x.BranchProductAvailabilityId);
 
+                e.HasOne(x => x.Branch)
+                 .WithMany()
+                 .HasForeignKey(x => x.BranchId)
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                e.HasOne(x => x.Product)
+                 .WithMany()
+                 .HasForeignKey(x => x.ProductId)
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                e.HasIndex(x => new { x.BranchId, x.ProductId }).IsUnique();
+                e.HasIndex(x => new { x.BranchId, x.IsAvailable });
+            });
             b.Entity<Customer>(e =>
             {
                 e.ToTable("Customers", "dbo");
@@ -89,7 +109,27 @@ namespace Lumen.InfraStructure
                 e.HasIndex(x => x.FullName);
             });
 
+            b.Entity<ProductRecipe>(e =>
+            {
+                e.ToTable("ProductRecipes", "dbo");
+                e.HasKey(x => x.ProductRecipeId);
 
+                e.Property(x => x.Quantity).HasColumnType("decimal(18,4)");
+                e.Property(x => x.Note).HasMaxLength(500);
+
+                e.HasOne(x => x.ParentProduct)
+                 .WithMany()
+                 .HasForeignKey(x => x.ParentProductId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasOne(x => x.ComponentProduct)
+                 .WithMany()
+                 .HasForeignKey(x => x.ComponentProductId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasIndex(x => x.ParentProductId);
+                e.HasIndex(x => x.ComponentProductId);
+            });
             // ================================================================
             // Menu
             // ================================================================
@@ -123,7 +163,8 @@ new AppRole { Id = "role-menu", Name = "MenuAdmin", NormalizedName = "MENUADMIN"
                      .WithMany()
                      .HasForeignKey(x => x.ProductCategoryId)
                      .OnDelete(DeleteBehavior.Restrict);
-
+                    e.Property(x => x.Kind).HasConversion<int>().HasDefaultValue(ProductKind.MenuItem);
+                    e.HasIndex(x => x.Kind);
                     e.HasIndex(x => x.ProductCategoryId);
                     e.HasIndex(x => x.Title);
                 });

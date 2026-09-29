@@ -1,0 +1,102 @@
+﻿@using Lumen.Models
+@using Lumen.Models.Enums
+@using Lumen.Services.LedgerServices
+@using MudBlazor
+
+@inject ILedgerService LedgerService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6" Style="color:#FFD700; font-weight:700;">
+            @(IsEdit ? "ویرایش دسته" : "دسته جدید")
+        </MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudTextField T="string" @bind-Value="Category.Title" Label="عنوان *"
+                          Variant="Variant.Outlined" Margin="Margin.Dense" />
+
+            <MudTextField T="string" @bind-Value="Category.Code" Label="کد (اختیاری)"
+                          Variant="Variant.Outlined" Margin="Margin.Dense"
+                          HelperText="کد کوتاه یگانه برای سیستم، مثل SALE یا RENT" />
+
+            <MudSelect T="LedgerDirection" @bind-Value="Category.Direction"
+                       Label="نوع *" Variant="Variant.Outlined" Margin="Margin.Dense">
+                <MudSelectItem T="LedgerDirection" Value="LedgerDirection.Income">فقط درآمد</MudSelectItem>
+                <MudSelectItem T="LedgerDirection" Value="LedgerDirection.Expense">فقط هزینه</MudSelectItem>
+                <MudSelectItem T="LedgerDirection" Value="LedgerDirection.Both">هر دو</MudSelectItem>
+            </MudSelect>
+
+            <MudSelect T="long?" @bind-Value="Category.ParentId"
+                       Label="دسته والد (اختیاری)"
+                       Variant="Variant.Outlined" Margin="Margin.Dense">
+                <MudSelectItem T="long?" Value="(long?)null">— هیچ —</MudSelectItem>
+                @foreach (var c in ParentOptions)
+                {
+                    <MudSelectItem T="long?" Value="@((long?)c.LedgerCategoryId)">@c.Title</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudNumericField T="int" @bind-Value="Category.SortOrder"
+                             Label="ترتیب نمایش (کمتر = بالاتر)"
+                             Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" />
+
+            <MudTextField T="string" @bind-Value="Category.Description" Label="توضیحات"
+                          Variant="Variant.Outlined" Lines="2" Margin="Margin.Dense" />
+
+            <MudCheckBox T="bool" @bind-Value="Category.IsActive" Label="فعال"
+                         Color="Color.Warning" Dense="true" />
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true">@errorMessage</MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Variant="Variant.Text" OnClick="Cancel">انصراف</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="Save" Disabled="@saving">
+            @(saving ? "..." : "ذخیره")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public LedgerCategory Category { get; set; } = new();
+    [Parameter] public bool IsEdit { get; set; }
+    [Parameter] public List<LedgerCategory> AllCategories { get; set; } = new();
+
+    private string errorMessage = "";
+    private bool saving;
+
+    // Can't be your own parent; also exclude system categories from parent list
+    private IEnumerable<LedgerCategory> ParentOptions =>
+        AllCategories.Where(c =>
+            c.LedgerCategoryId != Category.LedgerCategoryId &&
+            !c.IsSystem);
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        errorMessage = "";
+        saving = true;
+        try
+        {
+            LedgerService.SaveCategory(Category);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+}

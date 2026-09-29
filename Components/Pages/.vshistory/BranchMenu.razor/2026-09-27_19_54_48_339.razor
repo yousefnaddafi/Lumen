@@ -1,0 +1,176 @@
+﻿@page "/admin/branch-menu"
+@attribute [Authorize(Roles = "Owner,BranchManager")]
+@rendermode InteractiveServer
+@layout Components.Layout.AdminLayout
+@using Lumen.Models
+@using Lumen.Services.BranchServices
+@using Lumen.Services.ProductCatgoryServices
+@using Lumen.Services.ProductServices
+@using MudBlazor
+@inject IBranchAvailabilityService AvailabilityService
+@inject IBranchService BranchService
+@inject IProductService ProductService
+@inject IProductCategoryService CategoryService
+@inject ISnackbar Snackbar
+
+<PageTitle>منوی شعبه - پنل قهوه</PageTitle>
+
+<div style="width:100%;">
+    <div style="margin-bottom:24px;">
+        <h3 style="background: linear-gradient(135deg,#FFD700,#FFB800); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-size:28px; font-weight:700; margin:0;">
+            🍽️ منوی هر شعبه
+        </h3>
+        <p style="color: rgba(255,255,255,0.4); margin:4px 0 0 0; font-size:14px;">
+            انتخاب کنید هر محصول در کدام شعبه‌ها قابل فروش باشد
+        </p>
+    </div>
+
+    <div style="display:flex; gap:12px; margin-bottom:20px;">
+        <MudSelect T="long" @bind-Value="branchId" @bind-Value:after="Load"
+                   Label="شعبه" Variant="Variant.Outlined" Style="min-width:220px;">
+            @foreach (var b in branches)
+            {
+                <MudSelectItem T="long" Value="@b.BranchId">@b.Title</MudSelectItem>
+            }
+        </MudSelect>
+    </div>
+
+    @if (branchId == 0)
+    {
+        <MudAlert Severity="Severity.Info">شعبه را انتخاب کنید.</MudAlert>
+    }
+    else
+    {
+        <div style="display:flex; gap:8px; margin-bottom:16px;">
+            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Success"
+                       OnClick="@(() => SetAll(true))">فعال کردن همه</MudButton>
+            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error"
+                       OnClick="@(() => SetAll(false))">غیرفعال کردن همه</MudButton>
+        </div>
+
+        @foreach (var group in groupedItems)
+        {
+            <div style="margin-bottom:20px; background:rgba(255,255,255,0.02); border-radius:16px; border:1px solid rgba(255,255,255,0.03); padding:16px;">
+                <h4 style="color:#FFD700; margin:0 0 12px 0;">@group.CategoryTitle</h4>
+                <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:8px;">
+                    @foreach (var item in group.Items)
+                    {
+                        var p = item.Product;
+                        var available = item.IsAvailable;
+                        <div class="availability-cell @(available ? "on" : "off")"
+                             @onclick="() => Toggle(p.ProductId, !available)">
+                            <span class="avail-dot"></span>
+                            <span class="avail-title">@p.Title</span>
+                            <span class="avail-state">@(available ? "✓" : "✗")</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<style>
+    .availability-cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: all 0.2s ease;
+        user-select: none;
+    }
+
+        .availability-cell:hover {
+            transform: translateY(-1px);
+        }
+
+        .availability-cell.on {
+            background: rgba(102,187,106,0.08);
+            border-color: rgba(102,187,106,0.3);
+            color: #66bb6a;
+        }
+
+        .availability-cell.off {
+            background: rgba(244,67,54,0.05);
+            border-color: rgba(244,67,54,0.2);
+            color: rgba(255,255,255,0.4);
+        }
+
+    .avail-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    .avail-title {
+        flex: 1;
+    }
+
+    .avail-state {
+        font-weight: 700;
+    }
+</style>
+
+@code {
+    private List<Branch> branches = new();
+    private List<Product> allProducts = new();
+    private List<ProductCategory> categories = new();
+    private Dictionary<long, bool> availability = new();
+    private long branchId;
+
+    private record CategoryGroup(string CategoryTitle, List<(Product Product, bool IsAvailable)> Items);
+    private List<CategoryGroup> groupedItems = new();
+
+    protected override void OnInitialized()
+    {
+        branches = BranchService.GetAll();
+        categories = CategoryService.GetAll(0, 0, null);
+        allProducts = ProductService.GetAll(null, null)
+            .Where(p => p.Kind == ProductKind.MenuItem)
+            .ToList();
+
+        branchId = branches.FirstOrDefault()?.BranchId ?? 0;
+        Load();
+    }
+
+    private void Load()
+    {
+        if (branchId == 0) { groupedItems = new(); return; }
+
+        availability = AvailabilityService.GetByBranch(branchId)
+            .ToDictionary(a => a.ProductId, a => a.IsAvailable);
+
+        groupedItems = allProducts
+            .GroupBy(p => p.ProductCategoryId)
+            .Select(g =>
+            {
+                var cat = categories.FirstOrDefault(c => c.ProductCategoryId == g.Key);
+                var items = g.Select(p => (
+                    Product: p,
+                    IsAvailable: !availability.TryGetValue(p.ProductId, out var v) || v
+                )).ToList();
+                return new CategoryGroup(cat?.Title ?? "بدون دسته", items);
+            })
+            .OrderBy(g => g.CategoryTitle)
+            .ToList();
+    }
+
+    private void Toggle(long productId, bool newValue)
+    {
+        AvailabilityService.SetAvailability(branchId, productId, newValue);
+        Load();
+        StateHasChanged();
+    }
+
+    private void SetAll(bool value)
+    {
+        var ids = allProducts.Select(p => p.ProductId).ToList();
+        AvailabilityService.SetAvailabilityBatch(branchId, ids, value);
+        Load();
+        StateHasChanged();
+    }
+}

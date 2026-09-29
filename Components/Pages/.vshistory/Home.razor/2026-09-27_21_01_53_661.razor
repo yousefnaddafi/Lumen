@@ -1,0 +1,895 @@
+﻿@page "/"
+@page "/menu"
+@page "/menu/{BranchId:long}"
+@using Lumen.Components.Pages.Dialogs
+@using Lumen.Models
+@using Lumen.Services.BranchAvailabilityServices
+@using Lumen.Services.BranchServices
+@using Lumen.Services.ProductCatgoryServices
+@using Lumen.Services.ProductServices
+@inject IProductService ProductService
+@inject IProductCategoryService CategoryService
+@inject IBranchService BranchService
+@inject IBranchAvailabilityService AvailabilityService
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+<!DOCTYPE html>
+<html dir="rtl" lang="fa">
+<head>
+    <link rel="stylesheet" href="css/font/all.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>منوی قهوه لومِن</title>
+    <style>
+        :root {
+            --yellow: #FFD400;
+            --yellow-soft: #FFE566;
+            --yellow-deep: #E6B800;
+            --black: #111111;
+            --black-soft: #1c1c1c;
+            --silver: #C9CCD1;
+            --silver-light: #F1F2F4;
+            --silver-dark: #8D9096;
+            --glass-bg: rgba(255, 255, 255, 0.28);
+            --glass-bg-strong: rgba(255, 255, 255, 0.45);
+            --glass-border: rgba(255, 255, 255, 0.65);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        @@font-face {
+            font-family: 'Sahel';
+            src: url('/fonts/Sahel.ttf') format('truetype');
+        }
+
+        body {
+            font-family: 'Sahel', Arial, sans-serif;
+            background: radial-gradient(circle at 15% 10%, rgba(255, 212, 0, 0.12), transparent 45%), radial-gradient(circle at 85% 90%, rgba(201, 204, 209, 0.35), transparent 50%), linear-gradient(160deg, #f4f4f5 0%, #e2e3e6 100%);
+            min-height: 100vh;
+            color: var(--black);
+            line-height: 1.6;
+            scroll-behavior: smooth;
+            padding: 0 0 20px 0;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* ============ BRANCH PICKER ============ */
+        .branch-picker {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .branch-picker-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+            .branch-picker-header .logo {
+                width: 120px;
+                margin-bottom: 16px;
+                filter: drop-shadow(0 8px 22px rgba(255, 212, 0, 0.45));
+                border-radius: 24px;
+            }
+
+            .branch-picker-header h1 {
+                font-size: 2.6em;
+                font-weight: 800;
+                margin-bottom: 8px;
+                background: linear-gradient(135deg, var(--black) 0%, var(--yellow-deep) 55%, var(--silver-dark) 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+                letter-spacing: 1px;
+            }
+
+            .branch-picker-header p {
+                font-size: 1.05em;
+                color: #555;
+                font-weight: 400;
+            }
+
+        .branch-list {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .branch-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px 22px;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.75), rgba(201, 204, 209, 0.5));
+            backdrop-filter: blur(18px) saturate(180%);
+            -webkit-backdrop-filter: blur(18px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            border-radius: 28px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 1);
+            cursor: pointer;
+            transition: all 0.28s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .branch-card::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 5px;
+                height: 100%;
+                background: linear-gradient(180deg, var(--yellow), var(--yellow-deep));
+            }
+
+            .branch-card:hover {
+                transform: translateY(-3px) scale(1.01);
+                box-shadow: 0 18px 40px rgba(0, 0, 0, 0.16), 0 0 0 2px var(--yellow), inset 0 1px 0 rgba(255, 255, 255, 1);
+                background: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(201, 204, 209, 0.65));
+            }
+
+        .branch-icon {
+            width: 52px;
+            height: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--yellow), var(--yellow-deep));
+            border-radius: 16px;
+            font-size: 26px;
+            flex-shrink: 0;
+            box-shadow: 0 6px 16px rgba(255, 212, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+        }
+
+        .branch-info {
+            flex: 1;
+            text-align: right;
+        }
+
+        .branch-title {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--black);
+            margin-bottom: 2px;
+        }
+
+        .branch-address {
+            font-size: 0.85rem;
+            color: #555;
+            font-weight: 400;
+        }
+
+        .branch-arrow {
+            font-size: 1.4rem;
+            color: var(--yellow-deep);
+            font-weight: 700;
+            transition: transform 0.25s ease;
+        }
+
+        .branch-card:hover .branch-arrow {
+            transform: translateX(-6px);
+        }
+
+        .branch-picker-footer {
+            margin-top: 40px;
+            text-align: center;
+            color: var(--silver-dark);
+            font-size: 0.85rem;
+        }
+
+        /* ============ MENU HEADER BAR ============ */
+        .menu-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    margin: 12px 16px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.65), rgba(201, 204, 209, 0.45));
+    backdrop-filter: blur(18px) saturate(180%);
+    -webkit-backdrop-filter: blur(18px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 40px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 1);
+}
+
+            .menu-topbar .brand {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-weight: 800;
+                font-size: 1.05rem;
+            }
+
+                .menu-topbar .brand .dot {
+                    width: 10px;
+                    height: 10px;
+                    border-radius: 50%;
+                    background: linear-gradient(135deg, var(--yellow), var(--yellow-deep));
+                    box-shadow: 0 0 10px rgba(255, 212, 0, 0.7);
+                }
+
+            .menu-topbar .branch-name {
+                font-size: 0.85rem;
+                color: #555;
+                font-weight: 500;
+            }
+
+        .change-branch-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, var(--yellow), var(--yellow-deep));
+            color: var(--black);
+            border: 1px solid rgba(17, 17, 17, 0.6);
+            border-radius: 40px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 6px 14px rgba(255, 212, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            font-family: inherit;
+        }
+
+            .change-branch-btn:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 10px 22px rgba(255, 212, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            }
+
+        /* ============ HERO VIDEO ============ */
+        header {
+            position: relative;
+            height: 55vh;
+            width: 100%;
+            overflow: hidden;
+            isolation: isolate;
+            border-radius: 0 0 48px 48px;
+            margin-bottom: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+            border-bottom: 3px solid var(--yellow);
+        }
+
+            header video {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                z-index: 0;
+                pointer-events: none;
+                filter: brightness(0.65) saturate(1.1) contrast(1.05);
+            }
+
+        .hero-overlay {
+            position: relative;
+            z-index: 2;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: radial-gradient(circle at 50% 40%, rgba(255, 212, 0, 0.18), transparent 60%), linear-gradient(to bottom, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.65));
+            backdrop-filter: blur(2px);
+            padding: 20px;
+        }
+
+            .hero-overlay img.logo {
+                width: 130px;
+                margin-bottom: 16px;
+                filter: drop-shadow(0 8px 22px rgba(255, 212, 0, 0.45));
+                border-radius: 24px;
+            }
+
+            .hero-overlay h1 {
+                font-size: 2.8em;
+                font-weight: 800;
+                margin-bottom: 6px;
+                letter-spacing: 1px;
+                background: linear-gradient(135deg, #FFFFFF 0%, var(--yellow) 45%, var(--silver) 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+                text-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+            }
+
+            .hero-overlay p.tagline {
+                font-size: 1.15em;
+                color: var(--silver-light);
+                text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
+                font-weight: 300;
+                letter-spacing: 0.5px;
+            }
+
+        /* ============ CATEGORY SLIDER ============ */
+        .category-slider {
+            overflow-x: auto;
+            white-space: nowrap;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.5), rgba(201, 204, 209, 0.35));
+            backdrop-filter: blur(18px) saturate(180%);
+            -webkit-backdrop-filter: blur(18px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            padding: 18px 0;
+            border-radius: 60px;
+            margin: 0 20px 30px 20px;
+            box-shadow: 0 10px 34px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 -1px 0 rgba(141, 144, 150, 0.25);
+            transition: all 0.3s ease;
+            scroll-behavior: smooth;
+            display: flex;
+        }
+
+        .category-container {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 12px;
+            padding: 0 20px;
+        }
+
+        .category-tag {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.75), rgba(201, 204, 209, 0.5));
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.95);
+            border-radius: 40px;
+            padding: 12px 28px;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--black);
+            cursor: pointer;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 1);
+            flex: 0 0 auto;
+            transition: all 0.25s ease;
+            letter-spacing: 0.3px;
+        }
+
+            .category-tag:hover {
+                background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(201, 204, 209, 0.65));
+                transform: translateY(-2px);
+            }
+
+            .category-tag.active {
+                transform: scale(1.05);
+                background: linear-gradient(135deg, var(--yellow) 0%, var(--yellow-deep) 100%);
+                color: var(--black);
+                border-color: var(--black);
+                font-weight: 800;
+                box-shadow: 0 10px 26px rgba(255, 212, 0, 0.55), 0 0 0 2px rgba(17, 17, 17, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            }
+
+        /* ============ MENU SECTIONS ============ */
+        #menu {
+            background-color: #cfd0d2;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E"), radial-gradient(ellipse 60% 40% at 25% 25%, rgba(255,255,255,0.45), transparent 70%), radial-gradient(ellipse 50% 35% at 80% 70%, rgba(0,0,0,0.10), transparent 70%), radial-gradient(ellipse 70% 50% at 60% 10%, rgba(255,255,255,0.25), transparent 75%), linear-gradient(160deg, #e8e9ea 0%, #c4c5c8 35%, #d8d9db 65%, #b8b9bd 100%);
+            background-size: 300px 300px, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+            background-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+            background-attachment: fixed;
+            background-blend-mode: overlay, normal, normal, normal, normal;
+            padding: 20px 0 40px 0;
+            margin: 0 16px;
+            border-radius: 64px;
+            position: relative;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4), inset 0 0 80px rgba(0, 0, 0, 0.08), 0 30px 60px rgba(0, 0, 0, 0.18);
+        }
+
+            #menu::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                border-radius: 64px;
+                background: linear-gradient(160deg, rgba(17, 17, 17, 0.35) 0%, rgba(201, 204, 209, 0.15) 45%, rgba(255, 212, 0, 0.10) 100%);
+                pointer-events: none;
+                z-index: 0;
+            }
+
+        .menu-section {
+            background: transparent;
+            padding: 30px 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+            .menu-section h2 {
+                text-align: center;
+                font-size: 2.6em;
+                margin-bottom: 36px;
+                font-weight: 800;
+                letter-spacing: 2px;
+                background: linear-gradient(135deg, #FFFFFF 0%, var(--yellow) 55%, var(--silver) 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+                text-shadow: 0 6px 28px rgba(0, 0, 0, 0.7);
+            }
+
+        .menu-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .menu-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            position: relative;
+            margin-bottom: 80px;
+            border-radius: 48px;
+            transition: transform 0.3s ease;
+        }
+
+            .menu-card:hover {
+                transform: translateY(-6px);
+            }
+
+            .menu-card img {
+                border-radius: 48px;
+                width: 85%;
+                height: auto;
+                aspect-ratio: 20/16;
+                object-fit: cover;
+                box-shadow: 0 30px 55px rgba(0, 0, 0, 0.35), 0 0 0 2px var(--silver), 0 0 0 4px var(--yellow);
+                border: 1px solid rgba(255, 255, 255, 0.7);
+                transition: all 0.4s ease;
+                filter: brightness(1.02) saturate(1.08) contrast(1.03);
+                z-index: 1;
+            }
+
+            .menu-card:hover img {
+                box-shadow: 0 36px 65px rgba(0, 0, 0, 0.4), 0 0 0 2px var(--silver-light), 0 0 0 4px var(--yellow), 0 0 30px rgba(255, 212, 0, 0.35);
+            }
+
+        .menu-details {
+            position: absolute;
+            bottom: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 75%;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.55) 0%, rgba(201, 204, 209, 0.35) 100%);
+            backdrop-filter: blur(22px) saturate(200%);
+            -webkit-backdrop-filter: blur(22px) saturate(200%);
+            border-radius: 36px;
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 -1px 0 rgba(141, 144, 150, 0.2);
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 10;
+            transition: all 0.3s ease;
+        }
+
+            .menu-details::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 60px;
+                height: 3px;
+                border-radius: 0 0 6px 6px;
+                background: linear-gradient(90deg, transparent, var(--yellow), transparent);
+            }
+
+        .menu-card:hover .menu-details {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.75) 0%, rgba(201, 204, 209, 0.5) 100%);
+            backdrop-filter: blur(26px) saturate(220%);
+            box-shadow: 0 26px 55px rgba(0, 0, 0, 0.33), inset 0 1px 0 rgba(255, 255, 255, 1);
+        }
+
+        .menu-item-title {
+            font-size: 1.3rem;
+            color: var(--black);
+            font-weight: 800;
+            margin-bottom: 4px;
+            letter-spacing: -0.2px;
+        }
+
+        .menu-item-desc {
+            color: #2b2b2b;
+            font-size: 0.85rem;
+            font-weight: 400;
+            margin-bottom: 6px;
+            opacity: 0.88;
+            line-height: 1.4;
+            max-width: 90%;
+        }
+
+        .menu-item-price {
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--black);
+            background: linear-gradient(135deg, var(--yellow) 0%, var(--yellow-soft) 100%);
+            padding: 4px 16px;
+            border-radius: 40px;
+            border: 1px solid rgba(17, 17, 17, 0.35);
+            box-shadow: 0 4px 12px rgba(255, 212, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+            margin-top: 5px;
+        }
+
+        /* ============ FOOTER ============ */
+        footer {
+            text-align: center;
+            padding: 30px 20px;
+            margin: 30px 20px 10px 20px;
+            background: linear-gradient(145deg, var(--black-soft) 0%, var(--black) 100%);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 48px;
+            border: 1px solid rgba(201, 204, 209, 0.35);
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(201, 204, 209, 0.25);
+            color: var(--silver-light);
+            font-weight: 500;
+        }
+
+            footer a {
+                color: var(--yellow);
+                font-weight: 700;
+                transition: color 0.25s ease;
+            }
+
+                footer a:hover {
+                    color: var(--yellow-soft);
+                }
+
+            footer img {
+                filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5)) brightness(0) saturate(100%) invert(82%) sepia(85%) saturate(1200%) hue-rotate(1deg) brightness(105%) contrast(105%);
+                vertical-align: middle;
+            }
+
+        #scrollToTop {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, var(--yellow), var(--yellow-deep));
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(17, 17, 17, 0.6);
+            padding: 16px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 1001;
+            display: none;
+            box-shadow: 0 10px 30px rgba(255, 212, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            transition: all 0.3s ease;
+            width: 65px;
+            height: 65px;
+            align-items: center;
+            justify-content: center;
+        }
+
+            #scrollToTop:hover {
+                transform: scale(1.1);
+                box-shadow: 0 14px 38px rgba(255, 212, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            }
+
+        /* ============ RESPONSIVE ============ */
+        @@media (max-width: 700px) {
+            .branch-picker-header h1 {
+                font-size: 2em;
+            }
+
+            .branch-icon {
+                width: 44px;
+                height: 44px;
+                font-size: 22px;
+            }
+
+            .branch-title {
+                font-size: 1rem;
+            }
+
+            .menu-topbar {
+                padding: 10px 14px;
+                margin: 8px 10px;
+            }
+
+                .menu-topbar .brand {
+                    font-size: 0.95rem;
+                }
+
+            .change-branch-btn {
+                font-size: 0.75rem;
+                padding: 6px 12px;
+            }
+
+            .menu-details {
+                width: 88%;
+                padding: 12px 14px;
+                bottom: -45px;
+            }
+
+            .menu-item-title {
+                font-size: 1.05rem;
+            }
+
+            .menu-item-desc {
+                font-size: 0.75rem;
+            }
+
+            .menu-item-price {
+                font-size: 0.85rem;
+                padding: 3px 10px;
+            }
+
+            .menu-card img {
+                width: 95%;
+            }
+
+            .category-slider {
+                margin: 0 8px 20px 8px;
+                padding: 12px 0;
+            }
+
+            .category-tag {
+                padding: 10px 18px;
+                font-size: 0.85rem;
+            }
+
+            .hero-overlay h1 {
+                font-size: 2em;
+            }
+
+            header {
+                height: 45vh;
+            }
+
+            #menu {
+                margin: 0 8px;
+                border-radius: 40px;
+            }
+
+            .menu-card {
+                margin-bottom: 70px;
+            }
+        }
+
+        @@media (max-width: 480px) {
+            .menu-details {
+                width: 92%;
+                bottom: -40px;
+                padding: 10px 12px;
+            }
+
+            .menu-item-desc {
+                font-size: 0.7rem;
+            }
+
+            .menu-item-title {
+                font-size: 0.95rem;
+            }
+
+            .branch-card {
+                padding: 16px;
+            }
+
+            .branch-address {
+                font-size: 0.78rem;
+            }
+        }
+
+        .category-slider::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .category-slider::-webkit-scrollbar-track {
+            background: rgba(201, 204, 209, 0.25);
+            border-radius: 20px;
+        }
+
+        .category-slider::-webkit-scrollbar-thumb {
+            background: linear-gradient(90deg, var(--yellow), var(--yellow-deep));
+            border-radius: 20px;
+        }
+    </style>
+</head>
+<body>
+    @if (SelectedBranchId == 0)
+    {
+        <!-- ============ BRANCH PICKER SCREEN ============ -->
+        <div class="branch-picker">
+            <div class="branch-picker-header">
+                <img src="img/MPLogo.png" alt="لومن" class="logo" />
+                <h1>کافه لومن</h1>
+                <p>برای مشاهده منو، شعبه مورد نظر خود را انتخاب کنید</p>
+            </div>
+
+            @if (branches.Count == 0)
+            {
+                <div style="text-align:center; color:#555; padding:20px;">
+                    در حال بارگذاری شعبه‌ها...
+                </div>
+            }
+            else
+            {
+                <div class="branch-list">
+                    @foreach (var branch in branches)
+                    {
+                        var b = branch;
+                        <a href="/menu/@b.BranchId" class="branch-card">
+                            <span class="branch-icon">📍</span>
+                            <div class="branch-info">
+                                <div class="branch-title">@b.Title</div>
+                                @if (!string.IsNullOrEmpty(b.Address))
+                                {
+                                    <div class="branch-address">@b.Address</div>
+                                }
+                            </div>
+                            <span class="branch-arrow">←</span>
+                        </a>
+                    }
+                </div>
+            }
+
+            <div class="branch-picker-footer">
+                Powered by Lumen
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- ============ MENU SCREEN ============ -->
+        <div class="menu-topbar">
+            <div class="brand">
+                <span class="dot"></span>
+                <div>
+                    <div>کافه لومن</div>
+                    <div class="branch-name">@currentBranchTitle</div>
+                </div>
+            </div>
+            <a href="/menu" class="change-branch-btn">
+                <i class="fa-solid fa-rotate"></i>
+                تغییر شعبه
+            </a>
+        </div>
+
+        <HeroHeader />
+
+        <!-- Category Slider -->
+        <div class="category-slider" id="categorySlider">
+            <div class="category-container">
+                @foreach (var cat in CategoriesWithProducts)
+                {
+                    <div class="category-tag" data-target="@cat.Category.ProductCategoryId">@cat.Category.Title</div>
+                }
+            </div>
+        </div>
+
+        <!-- Menu Sections -->
+        <div id="menu">
+            @foreach (var group in CategoriesWithProducts)
+            {
+                <section id="@group.Category.ProductCategoryId" class="menu-section">
+                    <div class="menu-grid">
+                        @foreach (var product in group.Products)
+                        {
+                            <div class="menu-card">
+                                @if (string.IsNullOrEmpty(product.Image))
+                                {
+                                    <img src="img/coffee.jpg" alt="@product.Title">
+                                }
+                                else
+                                {
+                                    <img src="@product.Image" alt="@product.Title">
+                                }
+
+                                <div class="menu-details">
+                                    <div class="menu-item-title">@product.Title</div>
+                                    @if (!string.IsNullOrEmpty(product.Description))
+                                    {
+                                        <div class="menu-item-desc">@product.Description</div>
+                                    }
+                                    <div class="menu-item-price">@product.EcoPrice.ToString("N0") تومان</div>
+                                    @if (product.BusinessPrice != null)
+                                    {
+                                        <div class="menu-item-price">تجاری : @product.BusinessPrice.Value.ToString("N0") تومان</div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </section>
+            }
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <div style="text-align:right; display: flex; flex-direction: column; gap: 6px;">
+                <p style="padding-right:10px; width:100%; display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+                    <img src="img/location.png" style="width:20px"> @currentBranchAddress
+                </p>
+                <a href="tel:+989126023218" style="padding:6px 10px; width:100%; display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+                    <img src="img/phonecall.png" style="width:20px"> 09126023218
+                </a>
+                <p style="padding:6px 10px; width:100%; display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+                    <img src="img/clock.png" style="width:20px"> 6 صبح الی 24
+                </p>
+            </div>
+            <div style="text-align:left; margin-top: 16px; opacity: 0.85; font-size: 0.9em; color: var(--silver);">
+                &copy; ۲۰۲۵ قهوه لومِن. کلیه حقوق محفوظ است.
+            </div>
+        </footer>
+
+        <button id="scrollToTop">
+            <img src="img/up.png" style="width:25px; filter: brightness(0) saturate(100%) invert(0%);">
+        </button>
+    }
+
+    @code {
+        [Parameter] public long? BranchId { get; set; }
+
+        private List<Branch> branches = new();
+        private List<ProductCategory> Categories = new();
+        private List<Product> Products = new();
+        private long SelectedBranchId;
+        private string currentBranchTitle = "";
+        private string currentBranchAddress = "";
+
+        private record CategoryWithProducts(ProductCategory Category, List<Product> Products);
+        private List<CategoryWithProducts> CategoriesWithProducts = new();
+
+        protected override void OnParametersSet()
+        {
+            branches = BranchService.GetAll();
+
+            // If BranchId is present in the URL, use it.
+            if (BranchId.HasValue && BranchId.Value > 0)
+            {
+                SelectedBranchId = BranchId.Value;
+            }
+            else
+            {
+                SelectedBranchId = 0;
+                return;   // picker screen; nothing else to load yet
+            }
+
+            // Load branch-specific menu
+            var branch = branches.FirstOrDefault(b => b.BranchId == SelectedBranchId);
+            currentBranchTitle = branch?.Title ?? "";
+            currentBranchAddress = string.IsNullOrEmpty(branch?.Address)
+            ? "آدرس شعبه"
+            : "آدرس : " + branch.Address;
+
+            Products = AvailabilityService.GetMenuForBranch(SelectedBranchId);
+            Categories = CategoryService.GetAll(0, 0, null);
+
+            CategoriesWithProducts = Categories
+            .Select(c => new CategoryWithProducts(
+            c,
+            Products.Where(p => p.ProductCategoryId == c.ProductCategoryId).ToList()))
+            .Where(x => x.Products.Count > 0)
+            .ToList();
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (SelectedBranchId == 0) return;   // no menu on picker screen
+
+            for (int i = 0; i < 20; i++)
+            {
+                var exists = await JS.InvokeAsync<bool>("eval", "typeof window.lumenMenu !== 'undefined'");
+                if (exists) break;
+                await Task.Delay(50);
+            }
+            try { await JS.InvokeVoidAsync("lumenMenu.init"); } catch { }
+        }
+    }
+</body>
+</html>

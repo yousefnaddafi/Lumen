@@ -1,0 +1,749 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+@using Lumen.Models
+@using Microsoft.AspNetCore.Identity
+@using MudBlazor
+@rendermode InteractiveServer
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+@inject SignInManager<AppUser> SignInManager
+@inject AuthenticationStateProvider AuthProvider
+@inject CurrentUserState UserState
+
+<MudThemeProvider Theme="@_theme" IsDarkMode="true" />
+<MudSnackbarProvider />
+<MudPopoverProvider />
+<MudRTLProvider RightToLeft="true">
+    <!-- Mobile Menu Toggle Button -->
+    <MudButton Class="menu-toggle-btn" OnClick="ToggleSidebar">
+        ☰
+    </MudButton>
+
+    <!-- Overlay for mobile -->
+    @if (isMobileOpen)
+    {
+        <div class="sidebar-overlay" @onclick="CloseSidebar"></div>
+    }
+
+    <div style="display: flex; min-height: 100vh; position: relative;">
+        <!-- Sidebar -->
+        <div class="sidebar @(isMobileOpen ? "open" : "")" id="mainSidebar" style="@GetSidebarStyle()">
+            <div class="sidebar-header">
+                <h3>☕ پنل قهوه</h3>
+                <button class="sidebar-close-btn" @onclick="CloseSidebar">✕</button>
+            </div>
+            <hr class="sidebar-divider" />
+
+            <div class="sidebar-nav">
+                <a href="/admin/products"
+                   class="nav-link @(IsActive("/admin/products") ? "active" : "")"
+                   @onclick="CloseSidebar">
+                    📦 محصولات
+                </a>
+                <a href="/admin/categories"
+                   class="nav-link @(IsActive("/admin/categories") ? "active" : "")"
+                   @onclick="CloseSidebar">
+                    📂 دسته‌بندی‌ها
+                </a>
+                <a href="/admin/customers" class="nav-link @(IsActive("/admin/customers") ? "active" : "")" @onclick="CloseSidebar">
+                    👤 مشتریان
+                </a>
+                <a href="/admin/orders" class="nav-link @(IsActive("/admin/orders") ? "active" : "")" @onclick="CloseSidebar">
+                    🧾 سفارشات
+                </a>
+                <a href="/admin/users"
+                   class="nav-link @(IsActive("/admin/users") ? "active" : "")"
+                   @onclick="CloseSidebar">
+                    👥 کاربران
+                </a>
+                <a href="/admin/inventory"
+                   class="nav-link @(IsActive("/admin/inventory") ? "active" : "")"
+                   @onclick="CloseSidebar">
+                    📦 موجودی انبار
+                </a>
+                <a href="/admin/stock-history"
+                   class="nav-link @(IsActive("/admin/stock-history") ? "active" : "")"
+                   @onclick="CloseSidebar">
+                    📊 تاریخچه انبار
+                </a>
+                <a href="/admin/recipes"
+                   class="nav-link @(IsActive("/admin/recipes") ? "active" : "")"
+                   @onclick="CloseSidebar">
+                    🧪 رسپی‌ها
+                </a>
+                <a href="/admin/branch-menu"
+                   class="nav-link @(IsActive("/admin/branch-menu") ? "active" : "")"
+                   @onclick="CloseSidebar">
+                    🍽️ منوی شعبه
+                </a>
+                <a href="/admin/ledger"
+                   class="nav-link @(IsActive("/admin/ledger") ? "active" : "")"
+                   @onclick="CloseSidebar">
+                    💰 حسابداری
+                </a>
+                <a href="/admin/reports"
+                   class="nav-link @(IsActive("/admin/reports") ? "active" : "")"
+                   @onclick="CloseSidebar">
+                    📊 گزارشات
+                </a>
+                <MudButton OnClick="Logout" Variant="Variant.Text" Color="Color.Warning">
+                    خروج
+                </MudButton>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content" style="@GetMainContentStyle()">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <button class="menu-toggle-btn-inline" @onclick="ToggleSidebar">
+                        ☰
+                    </button>
+                    <span class="page-title">@GetPageTitle()</span>
+                </div>
+                <div class="top-bar-right">
+                    <div class="user-chip">
+                        <span class="user-avatar">@GetInitials(userName)</span>
+                        <div class="user-info">
+                            <span class="user-name">@userName</span>
+                            @if (!string.IsNullOrEmpty(userRole))
+                            {
+                                <span class="user-role">@userRole</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page Content -->
+            <div class="page-content">
+                @Body
+            </div>
+        </div>
+    </div>
+</MudRTLProvider>
+
+<style>
+    /* ====== BASE ====== */
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
+        color: #fff;
+    }
+
+    /* ====== SIDEBAR ====== */
+    .sidebar {
+        width: 250px;
+        background: rgba(0, 0, 0, 0.85);
+        padding: 20px;
+        color: #fff;
+        min-height: 100vh;
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        overflow-y: auto;
+        z-index: 1000;
+        transition: transform 0.3s ease;
+        border-left: 1px solid rgba(255, 215, 0, 0.1);
+        backdrop-filter: blur(10px);
+    }
+
+    .sidebar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+        .sidebar-header h3 {
+            color: #FFD700;
+            margin: 0;
+            font-size: 1.3rem;
+        }
+
+    .sidebar-close-btn {
+        display: none;
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0 8px;
+    }
+
+        .sidebar-close-btn:hover {
+            color: #FFD700;
+        }
+
+    .sidebar-divider {
+        border-color: rgba(255, 215, 0, 0.2);
+        margin-bottom: 20px;
+    }
+
+    .sidebar-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .nav-link {
+        color: rgba(255, 255, 255, 0.6);
+        text-decoration: none;
+        padding: 12px 16px;
+        border-radius: 8px;
+        display: block;
+        transition: all 0.3s ease;
+        font-size: 0.95rem;
+        cursor: pointer;
+    }
+
+        .nav-link:hover {
+            background: rgba(255, 215, 0, 0.1);
+            color: #FFD700;
+        }
+
+        .nav-link.active {
+            background: rgba(255, 215, 0, 0.15);
+            color: #FFD700;
+            border-right: 3px solid #FFD700;
+        }
+
+    /* ====== MOBILE OVERLAY ====== */
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 999;
+        display: none;
+    }
+
+    /* ====== MOBILE MENU TOGGLE ====== */
+    .menu-toggle-btn {
+        display: none;
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        z-index: 1001;
+        background: rgba(255, 215, 0, 0.15);
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        color: #FFD700;
+        font-size: 1.5rem;
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        backdrop-filter: blur(4px);
+    }
+
+        .menu-toggle-btn:hover {
+            background: rgba(255, 215, 0, 0.25);
+        }
+
+    .menu-toggle-btn-inline {
+        display: none;
+        background: none;
+        border: none;
+        color: #FFD700;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 4px 8px;
+    }
+
+        .menu-toggle-btn-inline:hover {
+            color: #FFD700;
+        }
+
+    /* ====== MAIN CONTENT ====== */
+    .main-content {
+        flex: 1;
+        padding: 0;
+        margin-right: 250px;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
+        transition: margin-right 0.3s ease;
+        width: 100%;
+    }
+
+    /* ====== TOP BAR ====== */
+    .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 30px;
+        background: rgba(0, 0, 0, 0.5);
+        border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        backdrop-filter: blur(8px);
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .top-bar-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .page-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #FFD700;
+    }
+
+    .top-bar-right {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .search-input {
+        padding: 8px 16px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.05);
+        color: #fff;
+        font-size: 0.9rem;
+        width: 200px;
+        transition: all 0.3s ease;
+    }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #FFD700;
+            background: rgba(255, 255, 255, 0.08);
+            width: 250px;
+        }
+
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+    .icon-btn {
+        background: none;
+        border: none;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 6px 8px;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+    }
+
+        .icon-btn:hover {
+            color: #FFD700;
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+    /* ====== PAGE CONTENT ====== */
+    .page-content {
+        padding: 24px 30px;
+        min-height: calc(100vh - 80px);
+    }
+
+    /* ==================================== */
+    /* ====== RESPONSIVE ====== */
+    /* ==================================== */
+
+    /* Tablet */
+    @@media (max-width: 1024px) {
+        .sidebar {
+            width: 220px;
+        }
+
+        .main-content {
+            margin-right: 220px;
+        }
+
+        .top-bar {
+            padding: 14px 20px;
+        }
+
+        .page-content {
+            padding: 20px;
+        }
+    }
+
+    /* Mobile */
+    @@media (max-width: 768px) {
+        /* Sidebar hidden by default */
+        .sidebar {
+            transform: translateX(100%);
+            width: 280px;
+        }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+        .sidebar-close-btn {
+            display: block;
+        }
+
+        .sidebar-overlay {
+            display: block;
+        }
+
+        .main-content {
+            margin-right: 0;
+        }
+        /* Show menu buttons */
+        .menu-toggle-btn {
+            display: block;
+        }
+
+        .menu-toggle-btn-inline {
+            display: block;
+        }
+        /* Top bar mobile */
+        .top-bar {
+            padding: 12px 16px;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+        }
+
+        .top-bar-left {
+            justify-content: space-between;
+        }
+
+        .top-bar-right {
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .search-input {
+            width: 100%;
+            flex: 1;
+        }
+
+            .search-input:focus {
+                width: 100%;
+            }
+
+        .page-content {
+            padding: 16px;
+        }
+    }
+
+    /* Small Mobile */
+    @@media (max-width: 480px) {
+        .sidebar {
+            width: 100%;
+            max-width: 320px;
+        }
+
+        .top-bar {
+            padding: 10px 12px;
+        }
+
+        .page-title {
+            font-size: 0.95rem;
+        }
+
+        .page-content {
+            padding: 12px;
+        }
+
+        .search-input {
+            font-size: 0.8rem;
+            padding: 6px 12px;
+        }
+    }
+
+
+
+    /* ====== USER CHIP (top bar) ====== */
+    .user-chip {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 12px;
+        background: rgba(255, 215, 0, 0.05);
+        border: 1px solid rgba(255, 215, 0, 0.15);
+        border-radius: 30px;
+        transition: all 0.3s ease;
+    }
+
+        .user-chip:hover {
+            border-color: rgba(255, 215, 0, 0.35);
+            background: rgba(255, 215, 0, 0.08);
+        }
+
+    .user-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #FFD700, #FFB800);
+        color: #1a1a1a;
+        font-weight: 700;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+    }
+
+    .user-info {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.2;
+        text-align: right;
+    }
+
+    .user-name {
+        color: #fff;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .user-role {
+        color: rgba(255, 215, 0, 0.7);
+        font-size: 11px;
+    }
+</style>
+
+@code {
+    private bool isMobileOpen = false;
+    private bool isMobile = false;
+    private bool isJSInitialized = false;
+    private string userName = "";
+    private string userRole = "";
+    private readonly MudTheme _theme = new()
+    {
+        PaletteDark = new PaletteDark
+        {
+            Primary = "#FFD700",
+            Secondary = "#FFB800",
+            Background = "#0a0a0a",
+            BackgroundGray = "#1a1a1a",
+            Surface = "#1a1a1a",
+            DrawerBackground = "#0f0f0f",
+            AppbarBackground = "#0f0f0f",
+            TextPrimary = "#ffffff",
+            TextSecondary = "rgba(255,255,255,0.7)",
+            TextDisabled = "rgba(255,255,255,0.3)",
+            ActionDefault = "#FFD700",
+            ActionDisabled = "rgba(255,255,255,0.25)",
+            Divider = "rgba(255,215,0,0.15)",
+            DividerLight = "rgba(255,215,0,0.08)",
+            LinesDefault = "rgba(255,215,0,0.15)",
+            LinesInputs = "rgba(255,215,0,0.25)",
+            TableLines = "rgba(255,215,0,0.1)",
+            TableStriped = "rgba(255,255,255,0.02)",
+            Info = "#4fc3f7",
+            Success = "#66bb6a",
+            Warning = "#FFB800",
+            Error = "#f44336",
+            Dark = "#0a0a0a",
+            GrayDefault = "#333",
+            GrayLight = "#555",
+            GrayLighter = "#777",
+            GrayDark = "#1a1a1a",
+            GrayDarker = "#0a0a0a",
+            OverlayDark = "rgba(0,0,0,0.75)",
+            OverlayLight = "rgba(0,0,0,0.5)"
+        },
+        LayoutProperties = new LayoutProperties
+        {
+            DefaultBorderRadius = "12px"
+        }
+    };
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isMobile = await IsMobileDevice();
+            if (isMobile)
+            {
+                isMobileOpen = false;
+            }
+            else
+            {
+                isMobileOpen = true;
+            }
+        }
+        catch
+        {
+            // Fallback for server-side rendering
+            isMobile = false;
+            isMobileOpen = true;
+        }
+
+        try
+        {
+            var state = await AuthProvider.GetAuthenticationStateAsync();
+            var user = state.User;
+            if (user.Identity?.IsAuthenticated == true)
+            {
+                userName = user.FindFirst("FullName")?.Value
+                           ?? user.Identity.Name
+                           ?? "کاربر";
+
+                var role = user.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "";
+                userRole = RoleLabel(role);
+            }
+        }
+        catch
+        {
+            userName = "کاربر";
+            userRole = "";
+        }
+
+    }
+    private static string GetInitials(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "؟";
+        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1)
+            return parts[0].Substring(0, 1).ToUpper();
+        return (parts[0][0].ToString() + parts[^1][0].ToString()).ToUpper();
+    }
+
+    private static string RoleLabel(string role) => role switch
+    {
+        "Owner" => "مدیر",
+        "BranchManager" => "مدیر شعبه",
+        "Cashier" => "صندوق‌دار",
+        "Barista" => "باریستا",
+        "Accountant" => "حسابدار",
+        "MenuAdmin" => "مدیر منو",
+        _ => ""
+    };
+    private Task Logout()
+    {
+        //await SignInManager.SignOutAsync();
+        NavigationManager.NavigateTo("/admin/logout", forceLoad: true);
+        return Task.CompletedTask;
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !isJSInitialized)
+        {
+            try
+            {
+                // Check if the JS function exists
+                var exists = await JSRuntime.InvokeAsync<bool>("eval", "typeof window.adminLayout !== 'undefined' && typeof window.adminLayout.initResize === 'function'");
+
+                if (exists)
+                {
+                    await JSRuntime.InvokeVoidAsync("adminLayout.initResize",
+                        DotNetObjectReference.Create(this));
+                    isJSInitialized = true;
+                }
+                else
+                {
+                    Console.WriteLine("adminLayout.initResize not found. Using fallback.");
+                    // Use CSS-only approach
+                    isJSInitialized = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error initializing JS: {ex.Message}");
+                isJSInitialized = true;
+            }
+        }
+    }
+
+    [JSInvokable]
+    public void OnResize(int width)
+    {
+        var wasMobile = isMobile;
+        isMobile = width < 768;
+
+        if (isMobile != wasMobile)
+        {
+            if (isMobile)
+            {
+                isMobileOpen = false;
+            }
+            else
+            {
+                isMobileOpen = true;
+            }
+            StateHasChanged();
+        }
+    }
+
+    private async Task<bool> IsMobileDevice()
+    {
+        try
+        {
+            // Check if window exists
+            var exists = await JSRuntime.InvokeAsync<bool>("eval", "typeof window !== 'undefined'");
+            if (!exists) return false;
+
+            return await JSRuntime.InvokeAsync<bool>("eval", "window.innerWidth < 768");
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private async Task ToggleSidebar()
+    {
+        isMobileOpen = !isMobileOpen;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void CloseSidebar()
+    {
+        if (isMobile)
+        {
+            isMobileOpen = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GetSidebarStyle()
+    {
+        if (isMobile)
+        {
+            return isMobileOpen ? "transform: translateX(0);" : "transform: translateX(100%);";
+        }
+        return "";
+    }
+
+    private string GetMainContentStyle()
+    {
+        return "";
+    }
+
+    private bool IsActive(string path)
+    {
+        return NavigationManager.Uri.EndsWith(path);
+    }
+
+    private string GetPageTitle()
+    {
+        var uri = NavigationManager.Uri;
+        if (uri.Contains("/products")) return "مدیریت محصولات";
+        if (uri.Contains("/categories")) return "مدیریت دسته‌بندی‌ها";
+        if (uri.Contains("/customers")) return "مدیریت مشتریان";
+        if (uri.Contains("/orders/new")) return "سفارش جدید";
+        if (uri.Contains("/orders")) return "مدیریت سفارشات";
+        if (uri.Contains("/users")) return "مدیریت کاربران";
+        if (uri.Contains("/settings")) return "تنظیمات";
+        if (uri.Contains("/inventory")) return "موجودی انبار";
+        if (uri.Contains("/stock-history")) return "تاریخچه انبار";
+        if (uri.Contains("/recipes")) return "مدیریت رسپی‌ها";
+        if (uri.Contains("/branch-menu")) return "منوی شعبه";
+        return "داشبورد";
+    }
+}

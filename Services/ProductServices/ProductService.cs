@@ -13,8 +13,9 @@ namespace Lumen.Services.ProductServices
         private readonly IProjectEFRepository<Media> _mediaRepository;
         private readonly IProjectEFRepository<Branch> _branchRepo;
         private readonly IProjectEFRepository<BranchInventory> _inventoryRepo;
+        private readonly IProjectEFRepository<BranchProductAvailability> _availabilityRepo;
         private readonly IMediaService _mediaService;
-        public ProductService(IMediaService mediaService,IProjectEFRepository<Media> mediaRepository,
+        public ProductService(IMediaService mediaService, IProjectEFRepository<Media> mediaRepository, IProjectEFRepository<BranchProductAvailability> availabilityRepo,
             IProjectEFRepository<ProductCategory> ProductCategoryRepository, IProjectEFRepository<Branch> branchRepository,
             IProjectEFRepository<Product> productRepository, IProjectEFRepository<BranchInventory> inventoryRepo)
         {
@@ -24,6 +25,7 @@ namespace Lumen.Services.ProductServices
             _mediaService = mediaService;
             _branchRepo = branchRepository;
             _inventoryRepo = inventoryRepo;
+            _availabilityRepo = availabilityRepo;
         }
         public async Task<long> Create(Product model)
         {
@@ -48,9 +50,9 @@ namespace Lumen.Services.ProductServices
                         CreateDate = DateTime.Now,
                         UpdateDate = DateTime.Now
                     };
-                    
-                        await _mediaRepository.InsertAsync(dbMedia);
-                        model.Image = outPut.ImageName;
+
+                    await _mediaRepository.InsertAsync(dbMedia);
+                    model.Image = outPut.ImageName;
                 }
             }
             var branches = _branchRepo.GetQuery().Select(b => b.BranchId).ToList();
@@ -64,6 +66,14 @@ namespace Lumen.Services.ProductServices
                     ReorderLevel = 0,
                     LastUpdated = DateTime.Now,
                     CreatedAt = DateTime.UtcNow,
+                    IsDeleted = false
+                });
+                await _availabilityRepo.InsertAsync(new BranchProductAvailability
+                {
+                    BranchId = bid,
+                    ProductId = creation.ProductId,
+                    IsAvailable = true,
+                    SortOrder = 0,
                     IsDeleted = false
                 });
             }
@@ -100,7 +110,7 @@ namespace Lumen.Services.ProductServices
                     else
                     {
                         await _mediaRepository.InsertAsync(dbMedia);
-                        model.Image= outPut.ImageName;
+                        model.Image = outPut.ImageName;
                     }
                 }
             }
@@ -128,30 +138,30 @@ namespace Lumen.Services.ProductServices
                 return false;
             }
         }
-        public List<Product> GetAll( long? productCategoryId, bool? isAvailable)
+        public List<Product> GetAll(long? productCategoryId, bool? isAvailable)
         {
             var dbProducts = productRepository.GetQuery().AsNoTracking().ToList();
 
-            
+
             if (productCategoryId != null && productCategoryId != 0)
             {
                 dbProducts = dbProducts.Where(z => z.ProductCategoryId == productCategoryId).ToList();
             }
-            
+
             if (isAvailable != null)
             {
                 dbProducts = dbProducts.Where(z => z.IsAvailable == isAvailable).ToList();
             }
 
             var productsCount = dbProducts.Count();
-            
+
             var dbProductCategories = ProductCategoryRepository.GetQuery().Where(z => dbProducts.Select(x => x.ProductCategoryId).Contains(z.ProductCategoryId)).ToList();
             foreach (var dbProduct in dbProducts)
             {
                 var dbProfile = _mediaRepository.GetQuery().FirstOrDefault(z => z.ObjectId == dbProduct.ProductId && z.Type == MediaTypes.Product);
                 if (dbProfile != null)
                 {
-                    dbProduct.Image= "media/gallery/Product/" + dbProfile.PictureUrl;
+                    dbProduct.Image = "media/gallery/Product/" + dbProfile.PictureUrl;
                 }
                 dbProduct.CategoryName = dbProductCategories.FirstOrDefault(z => z.ProductCategoryId == dbProduct.ProductCategoryId)?.Title;
             }

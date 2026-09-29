@@ -9,5 +9,7 @@ namespace Lumen.Services.BranchServices
         Branch Create(Branch branch);
         Branch Update(Branch branch);
         Task<bool> Delete(long id);
+        List<Branch> GetBranchesForUser(string userId);
+        List<Branch> GetMyBranches();
     }
 }

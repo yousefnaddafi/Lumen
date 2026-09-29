@@ -1,0 +1,143 @@
+﻿@using Lumen.Models
+@using Lumen.Models.Enums
+@using Lumen.Services.LedgerServices
+@using MudBlazor
+@using System.Globalization
+
+@inject ILedgerService LedgerService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6" Style="color:#FFD700; font-weight:700;">
+            @(IsEdit ? "ویرایش سند" : "سند جدید")
+        </MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudStack Spacing="3">
+
+            <!-- Type toggle -->
+            <div style="display:flex; gap:8px;">
+                <MudButton Variant="@(Entry.Type == LedgerEntryType.Income ? Variant.Filled : Variant.Outlined)"
+                           Color="Color.Success" FullWidth="true"
+                           OnClick="@(() => Entry.Type = LedgerEntryType.Income)">
+                    درآمد
+                </MudButton>
+                <MudButton Variant="@(Entry.Type == LedgerEntryType.Expense ? Variant.Filled : Variant.Outlined)"
+                           Color="Color.Error" FullWidth="true"
+                           OnClick="@(() => Entry.Type = LedgerEntryType.Expense)">
+                    هزینه
+                </MudButton>
+            </div>
+
+            <MudSelect T="long" @bind-Value="Entry.BranchId" Label="شعبه *"
+                       Variant="Variant.Outlined" Margin="Margin.Dense">
+                <MudSelectItem T="long" Value="0L">— انتخاب کنید —</MudSelectItem>
+                @foreach (var b in Branches)
+                {
+                    <MudSelectItem T="long" Value="@b.BranchId">@b.Title</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="long" @bind-Value="Entry.LedgerCategoryId" Label="دسته *"
+                       Variant="Variant.Outlined" Margin="Margin.Dense">
+                <MudSelectItem T="long" Value="0L">— انتخاب کنید —</MudSelectItem>
+                @foreach (var c in FilteredCategories)
+                {
+                    <MudSelectItem T="long" Value="@c.LedgerCategoryId">@c.Title</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudNumericField T="decimal" @bind-Value="Entry.Amount" Label="مبلغ (تومان) *"
+                             Variant="Variant.Outlined" Margin="Margin.Dense"
+                             Min="0m" Format="N0" Culture="@(new System.Globalization.CultureInfo("fa-IR"))" />
+
+            <MudSelect T="PaymentMethod?" @bind-Value="Entry.PaymentMethod" Label="روش پرداخت"
+                       Variant="Variant.Outlined" Margin="Margin.Dense">
+                <MudSelectItem T="PaymentMethod?" Value="(PaymentMethod?)null">—</MudSelectItem>
+                <MudSelectItem T="PaymentMethod?" Value="PaymentMethod.Cash">نقدی</MudSelectItem>
+                <MudSelectItem T="PaymentMethod?" Value="PaymentMethod.Card">کارتی</MudSelectItem>
+                <MudSelectItem T="PaymentMethod?" Value="PaymentMethod.Online">آنلاین</MudSelectItem>
+                <MudSelectItem T="PaymentMethod?" Value="PaymentMethod.Wallet">کیف پول</MudSelectItem>
+                <MudSelectItem T="PaymentMethod?" Value="PaymentMethod.Other">سایر</MudSelectItem>
+            </MudSelect>
+
+            <MudDatePicker @bind-Date="EntryDate" Culture="culture" Label="تاریخ سند"
+                           Variant="Variant.Outlined" Margin="Margin.Dense" />
+
+            <MudTextField T="string" @bind-Value="Entry.Description" Label="شرح"
+                          Variant="Variant.Outlined" Lines="2" Margin="Margin.Dense" />
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true">@errorMessage</MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Variant="Variant.Text" OnClick="Cancel">انصراف</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="Save" Disabled="@saving">
+            @(saving ? "..." : "ذخیره")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public LedgerEntryDto Entry { get; set; } = new();
+    [Parameter] public List<Branch> Branches { get; set; } = new();
+    [Parameter] public List<LedgerCategory> Categories { get; set; } = new();
+    [Parameter] public bool IsEdit { get; set; }
+
+
+    private CultureInfo culture = new("fa-IR");
+    private string errorMessage = "";
+    private bool saving;
+
+    private DateTime? EntryDate
+    {
+        get => Entry.OccurredAt == default ? DateTime.Today : Entry.OccurredAt;
+        set => Entry.OccurredAt = value ?? DateTime.Today;
+    }
+
+    private IEnumerable<LedgerCategory> FilteredCategories =>
+        Categories.Where(c =>
+            c.IsActive &&
+            (c.Direction == LedgerDirection.Both ||
+             (Entry.Type == LedgerEntryType.Income && c.Direction == LedgerDirection.Income) ||
+             (Entry.Type == LedgerEntryType.Expense && c.Direction == LedgerDirection.Expense)));
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        errorMessage = "";
+        saving = true;
+        try
+        {
+            var input = new LedgerEntryInputDto
+            {
+                CashLedgerEntryId = Entry.CashLedgerEntryId,
+                BranchId = Entry.BranchId,
+                LedgerCategoryId = Entry.LedgerCategoryId,
+                Type = Entry.Type,
+                PaymentMethod = Entry.PaymentMethod,
+                Amount = Entry.Amount,
+                Description = Entry.Description,
+                OccurredAt = Entry.OccurredAt == default ? DateTime.Now : Entry.OccurredAt
+            };
+            LedgerService.SaveEntry(input);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+}

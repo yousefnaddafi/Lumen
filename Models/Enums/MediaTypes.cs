@@ -3,6 +3,7 @@
     public enum MediaTypes
     {
         Product = 1,
-        ProductCategory
+        ProductCategory,
+        LedgerAttachment 
     }
 }

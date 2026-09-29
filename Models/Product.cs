@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using Lumen.Models.Enums;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Lumen.Models
 {
@@ -16,6 +17,8 @@ namespace Lumen.Models
         public decimal CurrentUnitCost { get; set; }
         public string? Unit { get; set; }
         public bool TracksInventory { get; set; } = true;
+
+        public ProductKind Kind { get; set; } = ProductKind.MenuItem;
 
 
         [NotMapped]

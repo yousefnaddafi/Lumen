@@ -1,0 +1,422 @@
+﻿@page "/admin/ledger/categories"
+@attribute [Authorize(Roles = "Owner,Accountant")]
+@rendermode InteractiveServer
+@layout Components.Layout.AdminLayout
+@using Lumen.Components.Pages.Dialogs
+@using Lumen.Models
+@using Lumen.Models.Enums
+@using Lumen.Services.LedgerServices
+@using MudBlazor
+@using System.Globalization
+@inject ILedgerService LedgerService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+
+<MudDialogProvider/>
+<PageTitle>دسته‌بندی‌های حسابداری - پنل قهوه</PageTitle>
+
+<div style="width:100%;">
+
+    <!-- Header -->
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
+        <div>
+            <h3 style="margin:0; background: linear-gradient(135deg,#FFD700,#FFB800); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-size:28px; font-weight:700;">
+                🏷️ دسته‌بندی‌های حسابداری
+            </h3>
+            <p style="color: rgba(255,255,255,0.4); margin:4px 0 0 0; font-size:14px;">
+                دسته‌های درآمد و هزینه
+            </p>
+        </div>
+        <div style="display:flex; gap:8px;">
+            <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                       StartIcon="@Icons.Material.Filled.ArrowForward"
+                       OnClick="@(() => Nav.NavigateTo("/admin/ledger"))">
+                بازگشت به اسناد
+            </MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Warning"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="@(() => OpenDialog(null))">
+                دسته جدید
+            </MudButton>
+        </div>
+    </div>
+
+    @if (loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Warning" />
+    }
+    else
+    {
+        <!-- Two columns: Income and Expense -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+
+            <!-- Income -->
+            <div class="cat-panel">
+                <div class="cat-panel-header cat-income">
+                    <span>💵 دسته‌های درآمد</span>
+                    <span class="badge">@incomeCategories.Count</span>
+                </div>
+                @if (incomeCategories.Count == 0)
+                {
+                    <div style="padding:20px; color:rgba(255,255,255,0.3); text-align:center; font-size:13px;">
+                        دسته‌ای وجود ندارد
+                    </div>
+                }
+                else
+                {
+                    <div style="display:flex; flex-direction:column;">
+                        @foreach (var c in incomeCategories)
+                        {
+                            var cat = c;
+                            <div class="cat-row">
+                                <div style="flex:1; min-width:0;">
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span style="color:rgba(255,255,255,0.9); font-weight:500;">@cat.Title</span>
+                                        @if (cat.IsSystem)
+                                        {
+                                            <span class="sys-badge">سیستمی</span>
+                                        }
+                                        @if (!cat.IsActive)
+                                        {
+                                            <span class="off-badge">غیرفعال</span>
+                                        }
+                                        @if (usageCounts.TryGetValue(cat.LedgerCategoryId, out var cnt) && cnt > 0)
+                                        {
+                                            <span class="usage-badge">استفاده در @cnt سند</span>
+                                        }
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(cat.Code))
+                                    {
+                                        <div style="color:rgba(255,255,255,0.35); font-size:11px; margin-top:2px; font-family:monospace;">
+                                            کد: @cat.Code
+                                        </div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(cat.Description))
+                                    {
+                                        <div style="color:rgba(255,255,255,0.4); font-size:12px; margin-top:2px;">
+                                            @cat.Description
+                                        </div>
+                                    }
+                                    
+                                </div>
+                                <div style="display:flex; gap:2px;">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                                                   Color="Color.Warning" Title="ویرایش"
+                                                   Disabled="@cat.IsSystem"
+                                                   OnClick="@(() => OpenDialog(cat))" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                                                   Color="Color.Error" Title="حذف"
+                                                   Disabled="@cat.IsSystem"
+                                                   OnClick="@(() => DeleteCategory(cat))" />
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <!-- Expense -->
+            <div class="cat-panel">
+                <div class="cat-panel-header cat-expense">
+                    <span>💸 دسته‌های هزینه</span>
+                    <span class="badge">@expenseCategories.Count</span>
+                </div>
+                @if (expenseCategories.Count == 0)
+                {
+                    <div style="padding:20px; color:rgba(255,255,255,0.3); text-align:center; font-size:13px;">
+                        دسته‌ای وجود ندارد
+                    </div>
+                }
+                else
+                {
+                    <div style="display:flex; flex-direction:column;">
+                        @foreach (var c in expenseCategories)
+                        {
+                            var cat = c;
+                            <div class="cat-row">
+                                <div style="flex:1; min-width:0;">
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span style="color:rgba(255,255,255,0.9); font-weight:500;">@cat.Title</span>
+                                        @if (cat.IsSystem)
+                                        {
+                                            <span class="sys-badge">سیستمی</span>
+                                        }
+                                        @if (!cat.IsActive)
+                                        {
+                                            <span class="off-badge">غیرفعال</span>
+                                        }
+                                        @if (usageCounts.TryGetValue(cat.LedgerCategoryId, out var cnt) && cnt > 0)
+                                        {
+                                            <span class="usage-badge">استفاده در @cnt سند</span>
+                                        }
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(cat.Code))
+                                    {
+                                        <div style="color:rgba(255,255,255,0.35); font-size:11px; margin-top:2px; font-family:monospace;">
+                                            کد: @cat.Code
+                                        </div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(cat.Description))
+                                    {
+                                        <div style="color:rgba(255,255,255,0.4); font-size:12px; margin-top:2px;">
+                                            @cat.Description
+                                        </div>
+                                    }
+                                </div>
+                                <div style="display:flex; gap:2px;">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                                                   Color="Color.Warning" Title="ویرایش"
+                                                   Disabled="@cat.IsSystem"
+                                                   OnClick="@(() => OpenDialog(cat))" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                                                   Color="Color.Error" Title="حذف"
+                                                   Disabled="@cat.IsSystem"
+                                                   OnClick="@(() => DeleteCategory(cat))" />
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Both-direction categories (shown separately if any) -->
+        @if (bothCategories.Count > 0)
+        {
+            <div class="cat-panel" style="margin-top:16px;">
+                <div class="cat-panel-header cat-both">
+                    <span>🔀 دسته‌های دوطرفه (هم درآمد و هم هزینه)</span>
+                    <span class="badge">@bothCategories.Count</span>
+                </div>
+                <div style="display:flex; flex-direction:column;">
+                    @foreach (var c in bothCategories)
+                    {
+                        var cat = c;
+                        <div class="cat-row">
+                            <div style="flex:1; min-width:0;">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <span style="color:rgba(255,255,255,0.9); font-weight:500;">@cat.Title</span>
+                                    @if (cat.IsSystem)
+                                    {
+                                        <span class="sys-badge">سیستمی</span>
+                                    }
+                                    @if (usageCounts.TryGetValue(cat.LedgerCategoryId, out var cnt) && cnt > 0)
+                                    {
+                                        <span class="usage-badge">استفاده در @cnt سند</span>
+                                    }
+                                </div>
+                                @if (!string.IsNullOrEmpty(cat.Description))
+                                {
+                                    <div style="color:rgba(255,255,255,0.4); font-size:12px; margin-top:2px;">
+                                        @cat.Description
+                                    </div>
+                                }
+                            </div>
+                            <div style="display:flex; gap:2px;">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                                               Color="Color.Warning"
+                                               Disabled="@cat.IsSystem"
+                                               OnClick="@(() => OpenDialog(cat))" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                                               Color="Color.Error"
+                                               Disabled="@cat.IsSystem"
+                                               OnClick="@(() => DeleteCategory(cat))" />
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<style>
+    .usage-badge {
+        background: rgba(255,215,0,0.08);
+        color: rgba(255,215,0,0.8);
+        font-size: 10px;
+        padding: 1px 6px;
+        border-radius: 6px;
+        font-weight: 600;
+        border: 1px solid rgba(255,215,0,0.15);
+    }
+
+    .cat-panel {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.03);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+    .cat-panel-header {
+        padding: 14px 18px;
+        font-weight: 700;
+        font-size: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+        .cat-panel-header.cat-income {
+            color: #66bb6a;
+            background: rgba(102,187,106,0.05);
+        }
+
+        .cat-panel-header.cat-expense {
+            color: #f44336;
+            background: rgba(244,67,54,0.05);
+        }
+
+        .cat-panel-header.cat-both {
+            color: #4fc3f7;
+            background: rgba(79,195,247,0.05);
+        }
+
+    .badge {
+        background: rgba(255,255,255,0.08);
+        color: rgba(255,255,255,0.7);
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .cat-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 18px;
+        border-bottom: 1px solid rgba(255,255,255,0.03);
+        transition: background 0.15s ease;
+    }
+
+        .cat-row:last-child {
+            border-bottom: none;
+        }
+
+        .cat-row:hover {
+            background: rgba(255,215,0,0.03);
+        }
+
+    .sys-badge {
+        background: rgba(79,195,247,0.12);
+        color: #4fc3f7;
+        font-size: 10px;
+        padding: 1px 6px;
+        border-radius: 6px;
+        font-weight: 600;
+    }
+
+    .off-badge {
+        background: rgba(255,255,255,0.05);
+        color: rgba(255,255,255,0.4);
+        font-size: 10px;
+        padding: 1px 6px;
+        border-radius: 6px;
+        font-weight: 600;
+    }
+
+    @@media (max-width: 900px) {
+        div[style*="grid-template-columns:1fr 1fr"] {
+            grid-template-columns: 1fr !important;
+        }
+    }
+</style>
+
+@code {
+    private CultureInfo culture = new("fa-IR");
+
+    private List<LedgerCategory> allCategories = new();
+    private bool loading;
+    private Dictionary<long, int> usageCounts = new();
+    private List<LedgerCategory> incomeCategories =>
+        allCategories.Where(c =>
+            c.Direction == LedgerDirection.Income ||
+            c.Direction == LedgerDirection.Both)
+        .Where(c => c.Direction == LedgerDirection.Income)
+        .OrderBy(c => c.SortOrder).ThenBy(c => c.Title)
+        .ToList();
+
+    private List<LedgerCategory> expenseCategories =>
+        allCategories.Where(c => c.Direction == LedgerDirection.Expense)
+        .OrderBy(c => c.SortOrder).ThenBy(c => c.Title)
+        .ToList();
+
+    private List<LedgerCategory> bothCategories =>
+        allCategories.Where(c => c.Direction == LedgerDirection.Both)
+        .OrderBy(c => c.SortOrder).ThenBy(c => c.Title)
+        .ToList();
+
+    protected override void OnInitialized()
+    {
+        Load();
+    }
+
+    private void Load()
+    {
+        loading = true;
+        allCategories = LedgerService.GetCategories();
+        usageCounts = LedgerService.GetCategoryUsageCounts();
+        loading = false;
+    }
+
+    private async Task OpenDialog(LedgerCategory? existing)
+    {
+        var parameters = new DialogParameters
+        {
+            ["Category"] = existing ?? new LedgerCategory
+            {
+                Direction = LedgerDirection.Expense,
+                IsActive = true,
+                SortOrder = 100
+            },
+            ["IsEdit"] = existing != null,
+            ["AllCategories"] = allCategories
+        };
+        var dialog = await DialogService.ShowAsync<LedgerCategoryDialog>("", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false });
+
+        var result = await dialog.Result;
+        if (!result.Canceled && result.Data is true)
+        {
+            Load();
+            Snackbar.Add(existing == null ? "دسته ایجاد شد" : "دسته بروزرسانی شد", Severity.Success);
+        }
+    }
+
+    private async Task DeleteCategory(LedgerCategory cat)
+    {
+        if (cat.IsSystem)
+        {
+            Snackbar.Add("دسته‌های سیستمی قابل حذف نیستند", Severity.Warning);
+            return;
+        }
+
+        if (!LedgerService.CanDeleteCategory(cat.LedgerCategoryId, out var reason))
+        {
+            Snackbar.Add(reason ?? "امکان حذف وجود ندارد", Severity.Warning);
+            return;
+        }
+
+        var confirm = await DialogService.ShowMessageBoxAsync(
+            "حذف دسته",
+            $"حذف «{cat.Title}» مطمئن هستید؟",
+            "حذف", "انصراف");
+
+        if (confirm == true)
+        {
+            try
+            {
+                LedgerService.DeleteCategory(cat.LedgerCategoryId);
+                Load();
+                Snackbar.Add("دسته حذف شد", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add("خطا: " + ex.Message, Severity.Error);
+            }
+        }
+    }
+}

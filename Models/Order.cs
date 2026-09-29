@@ -55,6 +55,7 @@ namespace Lumen.Models
     public class SubmitOrderDto
     {
         public long BranchId { get; set; }
+        public OrderChannel Channel { get; set; } = OrderChannel.InStore;   // 👈 ADD THIS LINE
         public string? CustomerPhone { get; set; }
         public string? CustomerName { get; set; }
         public bool CustomerIsBusiness { get; set; }

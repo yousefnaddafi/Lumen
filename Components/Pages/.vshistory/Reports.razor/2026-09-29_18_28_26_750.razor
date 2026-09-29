@@ -1,0 +1,536 @@
+﻿@page "/admin/reports"
+@attribute [Authorize(Roles = "Owner,Accountant,BranchManager")]
+@rendermode InteractiveServer
+@layout Components.Layout.AdminLayout
+@using Lumen.Models
+@using Lumen.Models.Enums
+@using Lumen.Services.BranchServices
+@using Lumen.Services.LedgerServices
+@using MudBlazor
+@using System.Globalization
+@inject ILedgerService LedgerService
+@inject IBranchService BranchService
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+
+<PageTitle>گزارشات - پنل قهوه</PageTitle>
+
+<div style="width:100%;">
+
+    <!-- Header -->
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
+        <div>
+            <h3 style="margin:0; background: linear-gradient(135deg,#FFD700,#FFB800); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-size:28px; font-weight:700;">
+                📊 گزارشات مالی
+            </h3>
+            <p style="color: rgba(255,255,255,0.4); margin:4px 0 0 0; font-size:14px;">
+                تحلیل درآمد و هزینه شعبه‌ها
+            </p>
+        </div>
+        <div style="display:flex; gap:8px;">
+            <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                       OnClick="ExportToCsv">
+                خروجی CSV
+            </MudButton>
+        </div>
+    </div>
+
+    <!-- Filters row -->
+    <div style="background: rgba(255,255,255,0.02); border-radius:16px; border:1px solid rgba(255,255,255,0.03); padding:16px; margin-bottom:20px;">
+        <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:end;">
+
+            <MudSelect T="long" @bind-Value="branchId" @bind-Value:after="LoadAll"
+                       Label="شعبه" Variant="Variant.Outlined" Dense="true" Style="min-width:200px;">
+                <MudSelectItem T="long" Value="0L">همه شعبه‌ها</MudSelectItem>
+                @foreach (var b in branches)
+                {
+                    <MudSelectItem T="long" Value="@b.BranchId">@b.Title</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudDatePicker @bind-Date="fromDate" @bind-Date:after="LoadAll"
+                           Label="از تاریخ" Immediate="true" Dense="true" />
+            <MudDatePicker @bind-Date="toDate" @bind-Date:after="LoadAll"
+                           Label="تا تاریخ" Immediate="true" Dense="true" />
+
+            <div style="flex:1;"></div>
+
+            <!-- Presets -->
+            <button class="preset-btn" @onclick="() => ApplyPreset(RangePreset.Last7Days)">۷ روز اخیر</button>
+            <button class="preset-btn" @onclick="() => ApplyPreset(RangePreset.Last30Days)">۳۰ روز اخیر</button>
+            <button class="preset-btn" @onclick="() => ApplyPreset(RangePreset.ThisMonth)">این ماه</button>
+            <button class="preset-btn" @onclick="() => ApplyPreset(RangePreset.ThisYear)">سال جاری</button>
+        </div>
+    </div>
+
+    @if (loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Warning" />
+    }
+    else
+    {
+        <!-- KPI cards -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin-bottom:24px;">
+            <div class="kpi-card kpi-income">
+                <div class="kpi-label">کل درآمد</div>
+                <div class="kpi-value">@summary.TotalIncome.ToString("N0")</div>
+                <div class="kpi-sub">تومان</div>
+            </div>
+            <div class="kpi-card kpi-expense">
+                <div class="kpi-label">کل هزینه</div>
+                <div class="kpi-value">@summary.TotalExpense.ToString("N0")</div>
+                <div class="kpi-sub">تومان</div>
+            </div>
+            <div class="kpi-card @(summary.NetProfit >= 0 ? "kpi-profit" : "kpi-loss")">
+                <div class="kpi-label">@(summary.NetProfit >= 0 ? "سود" : "زیان")</div>
+                <div class="kpi-value">@Math.Abs(summary.NetProfit).ToString("N0")</div>
+                <div class="kpi-sub">تومان</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">حاشیه سود</div>
+                <div class="kpi-value">@ProfitMargin.ToString("N1")%</div>
+                <div class="kpi-sub">درصد</div>
+            </div>
+        </div>
+
+        <!-- Chart tabs -->
+        <div style="display:flex; gap:8px; margin-bottom:16px;">
+            <button class="tab-btn @(viewMode == ViewMode.Daily ? "active" : "")"
+                    @onclick="@(() => viewMode = ViewMode.Daily)">
+                روزانه
+            </button>
+            <button class="tab-btn @(viewMode == ViewMode.Monthly ? "active" : "")"
+                    @onclick="@(() => viewMode = ViewMode.Monthly)">
+                ماهانه
+            </button>
+            <button class="tab-btn @(viewMode == ViewMode.Yearly ? "active" : "")"
+                    @onclick="@(() => viewMode = ViewMode.Yearly)">
+                سالانه
+            </button>
+        </div>
+
+        <!-- Simple bar chart -->
+        <div style="background: rgba(255,255,255,0.02); border-radius:16px; border:1px solid rgba(255,255,255,0.03); padding:20px; margin-bottom:24px;">
+            @if (currentPeriods.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Dense="true">داده‌ای برای نمایش وجود ندارد.</MudAlert>
+            }
+            else
+            {
+                <div style="display:flex; align-items:flex-end; gap:6px; height:220px; overflow-x:auto; padding-bottom:8px;">
+                    @{
+                        var maxValue = currentPeriods.Max(p => Math.Max(p.TotalIncome, p.TotalExpense));
+                        if (maxValue <= 0) maxValue = 1;
+                    }
+                    @foreach (var p in currentPeriods)
+                    {
+                        var incomeHeight = (double)(p.TotalIncome / maxValue) * 180;
+                        var expenseHeight = (double)(p.TotalExpense / maxValue) * 180;
+                        <div style="display:flex; flex-direction:column; align-items:center; gap:4px; min-width:60px; flex:0 0 auto;">
+                            <div style="display:flex; gap:3px; align-items:flex-end; height:180px;">
+                                <div style="width:20px; height:@(incomeHeight)px; min-height:2px; background:linear-gradient(180deg,#66bb6a,#43a047); border-radius:4px 4px 0 0;"
+                                     title="@($"درآمد: {p.TotalIncome:N0}")"></div>
+                                <div style="width:20px; height:@(expenseHeight)px; min-height:2px; background:linear-gradient(180deg,#f44336,#c62828); border-radius:4px 4px 0 0;"
+                                     title="@($"هزینه: {p.TotalExpense:N0}")"></div>
+                            </div>
+                            <div style="color:rgba(255,255,255,0.5); font-size:11px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:64px;">
+                                @p.Label
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div style="display:flex; gap:20px; justify-content:center; margin-top:12px; font-size:12px;">
+                    <span style="color:#66bb6a;">■ درآمد</span>
+                    <span style="color:#f44336;">■ هزینه</span>
+                </div>
+            }
+        </div>
+
+        <!-- Two-column: category breakdown + period table -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+
+            <!-- Category breakdown -->
+            <div style="background: rgba(255,255,255,0.02); border-radius:16px; border:1px solid rgba(255,255,255,0.03); padding:20px;">
+                <h4 style="color:#FFD700; margin:0 0 16px 0;">تفکیک بر اساس دسته</h4>
+
+                @if (categoryBreakdown.Count == 0)
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true">داده‌ای وجود ندارد.</MudAlert>
+                }
+                else
+                {
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        @foreach (var c in categoryBreakdown.Take(15))
+                        {
+                            <div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                    <span style="display:flex; align-items:center; gap:6px; color:rgba(255,255,255,0.85); font-size:13px;">
+                                        <span style="width:8px; height:8px; border-radius:50%; background:@(c.Type == LedgerEntryType.Income ? "#66bb6a" : "#f44336");"></span>
+                                        @c.CategoryTitle
+                                    </span>
+                                    <span style="color:rgba(255,255,255,0.55); font-size:12px; font-family:monospace;">
+                                        @c.Total.ToString("N0")
+                                    </span>
+                                </div>
+                                <div style="height:6px; background:rgba(255,255,255,0.05); border-radius:3px; overflow:hidden;">
+                                    <div style="height:100%; width:@(c.PercentOfType.ToString("F2"))%; background:@(c.Type == LedgerEntryType.Income ? "linear-gradient(90deg,#66bb6a,#43a047)" : "linear-gradient(90deg,#f44336,#c62828)"); border-radius:3px;"></div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <!-- Period table -->
+            <div style="background: rgba(255,255,255,0.02); border-radius:16px; border:1px solid rgba(255,255,255,0.03); padding:20px;">
+                <h4 style="color:#FFD700; margin:0 0 16px 0;">جدول دوره‌ای</h4>
+
+                @if (currentPeriods.Count == 0)
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true">داده‌ای وجود ندارد.</MudAlert>
+                }
+                else
+                {
+                    <div style="max-height:400px; overflow-y:auto;">
+                        <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                            <thead style="position:sticky; top:0; background:rgba(0,0,0,0.6); z-index:1;">
+                                <tr>
+                                    <th style="text-align:right; padding:8px; color:#FFD700;">دوره</th>
+                                    <th style="text-align:right; padding:8px; color:#66bb6a;">درآمد</th>
+                                    <th style="text-align:right; padding:8px; color:#f44336;">هزینه</th>
+                                    <th style="text-align:right; padding:8px; color:#FFD700;">خالص</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var p in currentPeriods.OrderByDescending(x => x.PeriodStart))
+                                {
+                                    <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                                        <td style="padding:8px; color:rgba(255,255,255,0.7);">@p.Label</td>
+                                        <td style="padding:8px; color:#66bb6a; font-family:monospace;">@p.TotalIncome.ToString("N0")</td>
+                                        <td style="padding:8px; color:#f44336; font-family:monospace;">@p.TotalExpense.ToString("N0")</td>
+                                        <td style="padding:8px; font-family:monospace; color:@(p.NetProfit >= 0 ? "#66bb6a" : "#f44336");">
+                                            @(p.NetProfit >= 0 ? "+" : "−")@Math.Abs(p.NetProfit).ToString("N0")
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Per-branch comparison (only when viewing all branches) -->
+        @if (branchId == 0 && branchComparison.Count > 0)
+        {
+            <div style="background: rgba(255,255,255,0.02); border-radius:16px; border:1px solid rgba(255,255,255,0.03); padding:20px; margin-top:16px;">
+                <h4 style="color:#FFD700; margin:0 0 16px 0;">مقایسه شعبه‌ها</h4>
+                <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                    <thead>
+                        <tr>
+                            <th style="text-align:right; padding:10px; color:#FFD700;">شعبه</th>
+                            <th style="text-align:right; padding:10px; color:#66bb6a;">درآمد</th>
+                            <th style="text-align:right; padding:10px; color:#f44336;">هزینه</th>
+                            <th style="text-align:right; padding:10px; color:#FFD700;">سود</th>
+                            <th style="text-align:right; padding:10px; color:rgba(255,255,255,0.6);">سهم از کل درآمد</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var b in branchComparison)
+                        {
+                            <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                                <td style="padding:10px; color:rgba(255,255,255,0.85); font-weight:500;">@b.BranchTitle</td>
+                                <td style="padding:10px; color:#66bb6a; font-family:monospace;">@b.TotalIncome.ToString("N0")</td>
+                                <td style="padding:10px; color:#f44336; font-family:monospace;">@b.TotalExpense.ToString("N0")</td>
+                                <td style="padding:10px; font-family:monospace; color:@(b.NetProfit >= 0 ? "#66bb6a" : "#f44336");">
+                                    @(b.NetProfit >= 0 ? "+" : "−")@Math.Abs(b.NetProfit).ToString("N0")
+                                </td>
+                                <td style="padding:10px; color:rgba(255,255,255,0.6);">
+                                    @b.ShareOfTotalIncome.ToString("N1")%
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+</div>
+
+<style>
+    .preset-btn {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,215,0,0.1);
+        color: rgba(255,255,255,0.6);
+        padding: 8px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        cursor: pointer;
+        font-family: inherit;
+        transition: all 0.2s ease;
+    }
+
+        .preset-btn:hover {
+            background: rgba(255,215,0,0.08);
+            color: #FFD700;
+            border-color: rgba(255,215,0,0.3);
+        }
+
+    .tab-btn {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,215,0,0.1);
+        color: rgba(255,255,255,0.6);
+        padding: 8px 20px;
+        border-radius: 12px;
+        font-size: 13px;
+        cursor: pointer;
+        font-family: inherit;
+        transition: all 0.2s ease;
+    }
+
+        .tab-btn:hover {
+            color: #FFD700;
+            border-color: rgba(255,215,0,0.3);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg,#FFD700,#FFB800);
+            color: #1a1a1a;
+            font-weight: 700;
+            border-color: transparent;
+        }
+
+    .kpi-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,215,0,0.08);
+        border-radius: 16px;
+        padding: 18px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: rgba(255,215,0,0.6);
+        }
+
+    .kpi-income::before {
+        background: #66bb6a;
+    }
+
+    .kpi-expense::before {
+        background: #f44336;
+    }
+
+    .kpi-profit::before {
+        background: #66bb6a;
+    }
+
+    .kpi-loss::before {
+        background: #f44336;
+    }
+
+    .kpi-label {
+        color: rgba(255,255,255,0.5);
+        font-size: 13px;
+    }
+
+    .kpi-value {
+        color: #fff;
+        font-size: 24px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+    }
+
+    .kpi-income .kpi-value {
+        color: #66bb6a;
+    }
+
+    .kpi-expense .kpi-value {
+        color: #f44336;
+    }
+
+    .kpi-profit .kpi-value {
+        color: #66bb6a;
+    }
+
+    .kpi-loss .kpi-value {
+        color: #f44336;
+    }
+
+    .kpi-sub {
+        color: rgba(255,255,255,0.3);
+        font-size: 11px;
+    }
+
+    @@media (max-width: 900px) {
+        /* stack the two-column grid on mobile */
+        div[style*="grid-template-columns:1fr 1fr"] {
+            grid-template-columns: 1fr !important;
+        }
+    }
+</style>
+
+@code {
+    private CultureInfo culture = new("fa-IR");
+
+    private List<Branch> branches = new();
+    private List<PeriodReportDto> daily = new();
+    private List<PeriodReportDto> monthly = new();
+    private List<PeriodReportDto> yearly = new();
+    private List<CategoryBreakdownDto> categoryBreakdown = new();
+    private LedgerSummaryDto summary = new();
+
+    private List<BranchComparisonRow> branchComparison = new();
+
+    private long branchId;
+    private DateTime? fromDate;
+    private DateTime? toDate;
+    private bool loading;
+
+    private enum ViewMode { Daily, Monthly, Yearly }
+    private ViewMode viewMode = ViewMode.Daily;
+
+    private enum RangePreset { Last7Days, Last30Days, ThisMonth, ThisYear }
+
+    private List<PeriodReportDto> currentPeriods => viewMode switch
+    {
+        ViewMode.Daily => daily,
+        ViewMode.Monthly => monthly,
+        ViewMode.Yearly => yearly,
+        _ => daily
+    };
+
+    private decimal ProfitMargin =>
+        summary.TotalIncome > 0
+            ? summary.NetProfit / summary.TotalIncome * 100
+            : 0;
+
+    private record BranchComparisonRow(
+        long BranchId,
+        string BranchTitle,
+        decimal TotalIncome,
+        decimal TotalExpense,
+        decimal NetProfit,
+        decimal ShareOfTotalIncome);
+
+    protected override void OnInitialized()
+    {
+        branches = BranchService.GetAll();
+        // Default range: this month
+        var today = DateTime.Today;
+        fromDate = new DateTime(today.Year, today.Month, 1);
+        toDate = today;
+        LoadAll();
+    }
+
+    private LedgerFilterDto BuildFilter() => new()
+    {
+        BranchId = branchId > 0 ? branchId : null,
+        From = fromDate,
+        To = toDate
+    };
+
+    private void LoadAll()
+    {
+        loading = true;
+        var f = BuildFilter();
+
+        summary = LedgerService.GetSummary(f);
+        categoryBreakdown = LedgerService.GetCategoryBreakdown(f);
+        daily = LedgerService.GetDailyReport(f);
+        monthly = LedgerService.GetMonthlyReport(f);
+        yearly = LedgerService.GetYearlyReport(f);
+
+        if (branchId == 0)
+            branchComparison = BuildBranchComparison(f);
+        else
+            branchComparison = new();
+
+        loading = false;
+    }
+
+    private List<BranchComparisonRow> BuildBranchComparison(LedgerFilterDto baseFilter)
+    {
+        var rows = new List<BranchComparisonRow>();
+        decimal totalIncomeAll = 0;
+
+        foreach (var b in branches)
+        {
+            var f = new LedgerFilterDto
+            {
+                BranchId = b.BranchId,
+                From = baseFilter.From,
+                To = baseFilter.To
+            };
+            var s = LedgerService.GetSummary(f);
+            totalIncomeAll += s.TotalIncome;
+            rows.Add(new BranchComparisonRow(b.BranchId, b.Title,
+                s.TotalIncome, s.TotalExpense, s.NetProfit, 0));
+        }
+
+        // Second pass for share percentage
+        return rows
+            .Select(r => r with
+            {
+                ShareOfTotalIncome = totalIncomeAll > 0
+                    ? r.TotalIncome / totalIncomeAll * 100
+                    : 0
+            })
+            .OrderByDescending(r => r.TotalIncome)
+            .ToList();
+    }
+
+    private void ApplyPreset(RangePreset preset)
+    {
+        var today = DateTime.Today;
+        switch (preset)
+        {
+            case RangePreset.Last7Days:
+                fromDate = today.AddDays(-6); toDate = today; break;
+            case RangePreset.Last30Days:
+                fromDate = today.AddDays(-29); toDate = today; break;
+            case RangePreset.ThisMonth:
+                fromDate = new DateTime(today.Year, today.Month, 1); toDate = today; break;
+            case RangePreset.ThisYear:
+                fromDate = new DateTime(today.Year, 1, 1); toDate = today; break;
+        }
+        LoadAll();
+    }
+
+    private async Task ExportToCsv()
+    {
+        try
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("دوره,درآمد,هزینه,خالص");
+
+            foreach (var p in currentPeriods.OrderBy(x => x.PeriodStart))
+            {
+                sb.AppendLine($"{p.Label},{p.TotalIncome},{p.TotalExpense},{p.NetProfit}");
+            }
+
+            var csv = sb.ToString();
+            var bytes = System.Text.Encoding.UTF8.GetBytes(csv);
+            var base64 = Convert.ToBase64String(bytes);
+            var filename = $"report-{DateTime.Now:yyyyMMdd-HHmm}.csv";
+
+            await JS.InvokeVoidAsync("downloadFile",
+                filename, "text/csv;charset=utf-8;", base64);
+
+            Snackbar.Add("فایل CSV دانلود شد", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("خطا در خروجی: " + ex.Message, Severity.Error);
+        }
+    }
+}

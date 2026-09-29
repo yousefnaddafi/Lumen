@@ -63,8 +63,8 @@
             <MudSelectItem T="StockTransactionType?" Value="StockTransactionType.InitialStock">موجودی اولیه</MudSelectItem>
         </MudSelect>
 
-        <MudDatePicker @bind-Date="fromDate" @bind-Date:after="Load" Label="از" Immediate="true" />
-        <MudDatePicker @bind-Date="toDate" @bind-Date:after="Load" Label="تا" Immediate="true" />
+        <MudDatePicker @bind-Date="fromDate" @bind-Date:after="Load" Label="از" Culture="culture" Immediate="true" />
+        <MudDatePicker @bind-Date="toDate" @bind-Date:after="Load" Label="تا" Culture="culture" Immediate="true" />
 
         <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="ClearFilters">پاک کردن</MudButton>
     </div>

@@ -4,6 +4,7 @@
 @layout Components.Layout.AdminLayout
 @using Lumen.Models
 @using Lumen.Models.Enums
+@using Lumen.Services.BranchAvailabilityServices
 @using Lumen.Services.BranchServices
 @using Lumen.Services.CustomerServices
 @using Lumen.Services.OrderServices
@@ -19,7 +20,7 @@
     <div class="order-header">
         <h3>🧾 سفارش جدید</h3>
         <div class="header-total">
-            <span>جمع کل:</span>
+            <span>مبلغ نهایی:</span>
             <strong>@total.ToString("N0") تومان</strong>
         </div>
     </div>
@@ -65,7 +66,7 @@
                         var qty = line?.Quantity ?? 0;
                         var price = GetPriceFor(p);
 
-                        <div class="product-row @(qty > 0 ? "in-cart" : "")">
+                        <div class="product-row @(qty > 0 ? "in-cart" : "") @((qty == 0 && !branchAvailableProductIds.Contains(p.ProductId)) ? "not-available" : "")">
                             <div class="product-info">
                                 <div class="product-title">@p.Title</div>
                                 <div class="product-price">@price.ToString("N0") تومان</div>
@@ -89,6 +90,21 @@
 
         @* ============ RIGHT: SIDE PANEL ============ *@
         <div class="side-pane">
+
+            @* Channel (dine-in / takeaway) *@
+            <div class="panel-section">
+                <div class="section-title">🍽️ نوع سفارش</div>
+                <div style="display:flex; gap:8px;">
+                    <button class="channel-btn @(channel == OrderChannel.InStore ? "active" : "")"
+                            @onclick="() => channel = OrderChannel.InStore">
+                        🍽️ سالن
+                    </button>
+                    <button class="channel-btn @(channel == OrderChannel.Takeaway ? "active" : "")"
+                            @onclick="() => channel = OrderChannel.Takeaway">
+                        🥡 بیرون‌بر
+                    </button>
+                </div>
+            </div>
 
             @* Customer *@
             <div class="panel-section">
@@ -123,6 +139,7 @@
 
                 <MudCheckBox T="bool"
                              @bind-Value="isBusiness"
+                             @bind-Value:after="RecalcPrices"
                              Label="مشتری تجاری"
                              Color="Color.Warning"
                              Dense="true" />
@@ -131,12 +148,25 @@
             @* Branch *@
             <div class="panel-section">
                 <div class="section-title">🏢 شعبه</div>
-                <MudSelect T="long" @bind-Value="branchId" Variant="Variant.Outlined" Margin="Margin.Dense">
-                    @foreach (var b in branches)
-                    {
-                        <MudSelectItem T="long" Value="@b.BranchId">@b.Title</MudSelectItem>
-                    }
-                </MudSelect>
+                @if (branches.Count <= 1)
+                {
+                    <div style="color:#FFD700; font-weight:600; padding:8px 0;">
+                        @(branches.FirstOrDefault()?.Title ?? "شعبه‌ای به شما تخصیص نیافته")
+                    </div>
+                }
+                else
+                {
+                    <MudSelect T="long"
+                               @bind-Value="branchId"
+                               @bind-Value:after="OnBranchChanged"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense">
+                        @foreach (var b in branches)
+                        {
+                            <MudSelectItem T="long" Value="@b.BranchId">@b.Title</MudSelectItem>
+                        }
+                    </MudSelect>
+                }
             </div>
 
             @* Summary *@
@@ -169,8 +199,92 @@
                         <span>جمع:</span>
                         <span>@subTotal.ToString("N0") تومان</span>
                     </div>
+
+                    <!-- Discount -->
+                    <div class="discount-block">
+                        <div class="discount-header">
+                            <span style="color:rgba(255,255,255,0.75); font-size:13px;">تخفیف:</span>
+                            <button class="mode-toggle"
+                                    @onclick="() => discountIsPercent = !discountIsPercent">
+                                @(discountIsPercent ? "درصد" : "مبلغ")
+                            </button>
+                        </div>
+
+                        <div style="display:flex; gap:6px; align-items:center; margin-top:6px;">
+                            <MudNumericField T="decimal"
+                                             @bind-Value="discountInput"
+                                             Min="0"
+                                             Dense="true"
+                                             Variant="Variant.Outlined"
+                                             Style="flex:1;"
+                                             Format="N0"
+                                             Adornment="@(discountIsPercent ? Adornment.End : Adornment.None)"
+                                             AdornmentText="@(discountIsPercent ? "٪" : "")" />
+                            @if (discountIsPercent)
+                            {
+                                <span style="color:#FFB800; font-size:12px; white-space:nowrap;">
+                                    = @orderDiscount.ToString("N0")
+                                </span>
+                            }
+                        </div>
+
+                        <div class="preset-row">
+                            <button class="preset-chip" @onclick="() => ApplyPercentDiscount(10)">۱۰٪</button>
+                            <button class="preset-chip" @onclick="() => ApplyPercentDiscount(15)">۱۵٪</button>
+                            <button class="preset-chip" @onclick="() => ApplyPercentDiscount(50)">۵۰٪</button>
+                            <button class="preset-chip" @onclick="() => ApplyPercentDiscount(100)">رایگان</button>
+                            @if (orderDiscount > 0)
+                            {
+                                <button class="preset-chip clear" @onclick="ClearDiscount">پاک کردن</button>
+                            }
+                        </div>
+                    </div>
+
+                    @if (orderDiscount > 0)
+                    {
+                        <div class="summary-row discount-row">
+                            <span>− تخفیف:</span>
+                            <span>@orderDiscount.ToString("N0") تومان</span>
+                        </div>
+                    }
+
+                    <!-- Tax -->
+                    <div class="tax-block">
+                        <div class="discount-header">
+                            <span style="color:rgba(255,255,255,0.75); font-size:13px;">مالیات:</span>
+                            <button class="mode-toggle" @onclick="ToggleTax">
+                                @(taxEnabled ? "فعال" : "غیرفعال")
+                            </button>
+                        </div>
+                        @if (taxEnabled)
+                        {
+                            <div style="display:flex; gap:6px; align-items:center; margin-top:6px;">
+                                <MudNumericField T="decimal"
+                                                 @bind-Value="taxPercent"
+                                                 Min="0"
+                                                 Max="100"
+                                                 Dense="true"
+                                                 Variant="Variant.Outlined"
+                                                 Style="width:100px;"
+                                                 Adornment="Adornment.End"
+                                                 AdornmentText="٪" />
+                                <span style="color:#FFB800; font-size:12px; white-space:nowrap;">
+                                    = @taxAmount.ToString("N0") تومان
+                                </span>
+                            </div>
+                        }
+                    </div>
+
+                    @if (taxEnabled && taxAmount > 0)
+                    {
+                        <div class="summary-row tax-row">
+                            <span>+ مالیات:</span>
+                            <span>@taxAmount.ToString("N0") تومان</span>
+                        </div>
+                    }
+
                     <div class="summary-row total">
-                        <span>کل:</span>
+                        <span>مبلغ نهایی:</span>
                         <span>@total.ToString("N0") تومان</span>
                     </div>
                 }
@@ -216,14 +330,14 @@
         gap: 12px;
     }
 
-        .order-header h3 {
-            margin: 0;
-            background: linear-gradient(135deg, #FFD700, #FFB800);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 26px;
-            font-weight: 700;
-        }
+    .order-header h3 {
+        margin: 0;
+        background: linear-gradient(135deg, #FFD700, #FFB800);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 26px;
+        font-weight: 700;
+    }
 
     .header-total {
         color: rgba(255,255,255,0.6);
@@ -233,10 +347,10 @@
         font-size: 16px;
     }
 
-        .header-total strong {
-            color: #FFD700;
-            font-size: 20px;
-        }
+    .header-total strong {
+        color: #FFD700;
+        font-size: 20px;
+    }
 
     .order-body {
         display: grid;
@@ -277,13 +391,8 @@
         transition: border-color 0.2s ease;
     }
 
-        .search-input:focus {
-            border-color: #FFD700;
-        }
-
-        .search-input::placeholder {
-            color: rgba(255,255,255,0.3);
-        }
+    .search-input:focus { border-color: #FFD700; }
+    .search-input::placeholder { color: rgba(255,255,255,0.3); }
 
     .category-tabs {
         display: flex;
@@ -293,14 +402,8 @@
         scrollbar-width: thin;
     }
 
-        .category-tabs::-webkit-scrollbar {
-            height: 4px;
-        }
-
-        .category-tabs::-webkit-scrollbar-thumb {
-            background: rgba(255,215,0,0.2);
-            border-radius: 4px;
-        }
+    .category-tabs::-webkit-scrollbar { height: 4px; }
+    .category-tabs::-webkit-scrollbar-thumb { background: rgba(255,215,0,0.2); border-radius: 4px; }
 
     .cat-tab {
         flex: 0 0 auto;
@@ -313,19 +416,16 @@
         cursor: pointer;
         transition: all 0.2s ease;
         white-space: nowrap;
+        font-family: inherit;
     }
 
-        .cat-tab:hover {
-            border-color: rgba(255,215,0,0.3);
-            color: #FFD700;
-        }
-
-        .cat-tab.active {
-            background: linear-gradient(135deg, #FFD700, #FFB800);
-            color: #1a1a1a;
-            font-weight: 700;
-            border-color: transparent;
-        }
+    .cat-tab:hover { border-color: rgba(255,215,0,0.3); color: #FFD700; }
+    .cat-tab.active {
+        background: linear-gradient(135deg, #FFD700, #FFB800);
+        color: #1a1a1a;
+        font-weight: 700;
+        border-color: transparent;
+    }
 
     .product-list {
         flex: 1;
@@ -333,15 +433,8 @@
         padding: 8px;
         scrollbar-width: thin;
     }
-
-        .product-list::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .product-list::-webkit-scrollbar-thumb {
-            background: rgba(255,215,0,0.15);
-            border-radius: 3px;
-        }
+    .product-list::-webkit-scrollbar { width: 6px; }
+    .product-list::-webkit-scrollbar-thumb { background: rgba(255,215,0,0.15); border-radius: 3px; }
 
     .product-row {
         display: flex;
@@ -355,15 +448,20 @@
         transition: all 0.15s ease;
     }
 
-        .product-row:hover {
-            background: rgba(255,215,0,0.05);
-            border-color: rgba(255,215,0,0.15);
-        }
+    .product-row:hover {
+        background: rgba(255,215,0,0.05);
+        border-color: rgba(255,215,0,0.15);
+    }
 
-        .product-row.in-cart {
-            background: rgba(255,215,0,0.08);
-            border-color: rgba(255,215,0,0.3);
-        }
+    .product-row.in-cart {
+        background: rgba(255,215,0,0.08) !important;
+        border-color: rgba(255,215,0,0.3) !important;
+    }
+
+    .product-row.not-available {
+        opacity: 0.5;
+        filter: grayscale(60%);
+    }
 
     .product-info {
         display: flex;
@@ -373,16 +471,8 @@
         min-width: 0;
     }
 
-    .product-title {
-        color: #fff;
-        font-size: 15px;
-        font-weight: 500;
-    }
-
-    .product-price {
-        color: rgba(255,215,0,0.7);
-        font-size: 12px;
-    }
+    .product-title { color: #fff; font-size: 15px; font-weight: 500; }
+    .product-price { color: rgba(255,215,0,0.7); font-size: 12px; }
 
     .stepper {
         display: flex;
@@ -412,19 +502,9 @@
         padding: 0;
     }
 
-        .step-btn:hover:not(:disabled) {
-            background: #FFD700;
-            color: #1a1a1a;
-        }
-
-        .step-btn:disabled {
-            opacity: 0.25;
-            cursor: not-allowed;
-        }
-
-        .step-btn.plus {
-            background: rgba(255,215,0,0.2);
-        }
+    .step-btn:hover:not(:disabled) { background: #FFD700; color: #1a1a1a; }
+    .step-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+    .step-btn.plus { background: rgba(255,215,0,0.2); }
 
     .qty {
         min-width: 32px;
@@ -449,15 +529,8 @@
         overflow-y: auto;
         scrollbar-width: thin;
     }
-
-        .side-pane::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .side-pane::-webkit-scrollbar-thumb {
-            background: rgba(255,215,0,0.15);
-            border-radius: 3px;
-        }
+    .side-pane::-webkit-scrollbar { width: 6px; }
+    .side-pane::-webkit-scrollbar-thumb { background: rgba(255,215,0,0.15); border-radius: 3px; }
 
     .panel-section {
         background: rgba(255,255,255,0.03);
@@ -473,25 +546,45 @@
         margin-bottom: 10px;
     }
 
+    /* Channel buttons */
+    .channel-btn {
+        flex: 1;
+        padding: 10px;
+        border-radius: 10px;
+        border: 1px solid rgba(255,215,0,0.15);
+        background: rgba(255,255,255,0.03);
+        color: rgba(255,255,255,0.7);
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: inherit;
+    }
+    .channel-btn:hover { border-color: rgba(255,215,0,0.4); color: #FFD700; }
+    .channel-btn.active {
+        background: linear-gradient(135deg, #FFD700, #FFB800);
+        color: #1a1a1a;
+        border-color: transparent;
+    }
+
     .customer-status {
         margin-top: 8px;
         padding: 8px 12px;
         border-radius: 8px;
         font-size: 13px;
     }
+    .customer-status.success {
+        background: rgba(102,187,106,0.12);
+        border: 1px solid rgba(102,187,106,0.3);
+        color: #66bb6a;
+    }
+    .customer-status.info {
+        background: rgba(79,195,247,0.1);
+        border: 1px solid rgba(79,195,247,0.25);
+        color: #4fc3f7;
+    }
 
-        .customer-status.success {
-            background: rgba(102, 187, 106, 0.12);
-            border: 1px solid rgba(102, 187, 106, 0.3);
-            color: #66bb6a;
-        }
-
-        .customer-status.info {
-            background: rgba(79, 195, 247, 0.1);
-            border: 1px solid rgba(79, 195, 247, 0.25);
-            color: #4fc3f7;
-        }
-
+    /* Summary */
     .summary .summary-row {
         display: flex;
         justify-content: space-between;
@@ -500,14 +593,24 @@
         padding: 4px 0;
     }
 
-        .summary .summary-row.total {
-            border-top: 1px solid rgba(255,215,0,0.15);
-            margin-top: 6px;
-            padding-top: 10px;
-            color: #FFD700;
-            font-weight: 700;
-            font-size: 16px;
-        }
+    .summary .summary-row.total {
+        border-top: 1px solid rgba(255,215,0,0.15);
+        margin-top: 6px;
+        padding-top: 10px;
+        color: #FFD700;
+        font-weight: 700;
+        font-size: 16px;
+    }
+
+    .summary .summary-row.discount-row {
+        color: #f44336;
+        font-size: 13px;
+    }
+
+    .summary .summary-row.tax-row {
+        color: #4fc3f7;
+        font-size: 13px;
+    }
 
     .summary-empty {
         color: rgba(255,255,255,0.35);
@@ -517,7 +620,7 @@
     }
 
     .cart-lines {
-        max-height: 220px;
+        max-height: 200px;
         overflow-y: auto;
         margin-bottom: 10px;
         border-bottom: 1px solid rgba(255,215,0,0.08);
@@ -534,22 +637,60 @@
         padding: 4px 0;
     }
 
-    .cl-qty {
+    .cl-qty { color: #FFD700; font-weight: 700; min-width: 30px; }
+    .cl-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cl-total { color: rgba(255,255,255,0.6); font-size: 12px; }
+
+    /* Discount & Tax blocks */
+    .discount-block, .tax-block {
+        border-top: 1px dashed rgba(255,215,0,0.1);
+        margin-top: 8px;
+        padding-top: 8px;
+    }
+
+    .discount-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .mode-toggle {
+        background: rgba(255,215,0,0.1);
+        border: 1px solid rgba(255,215,0,0.2);
         color: #FFD700;
-        font-weight: 700;
-        min-width: 30px;
+        font-size: 11px;
+        padding: 3px 10px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-family: inherit;
+        font-weight: 600;
+    }
+    .mode-toggle:hover { background: rgba(255,215,0,0.2); }
+
+    .preset-row {
+        display: flex;
+        gap: 6px;
+        margin-top: 6px;
+        flex-wrap: wrap;
     }
 
-    .cl-title {
-        flex: 1;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+    .preset-chip {
+        background: rgba(255,215,0,0.08);
+        border: 1px solid rgba(255,215,0,0.15);
+        color: #FFD700;
+        font-size: 11px;
+        padding: 4px 10px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-family: inherit;
+        font-weight: 600;
+        transition: all 0.15s ease;
     }
-
-    .cl-total {
-        color: rgba(255,255,255,0.6);
-        font-size: 12px;
+    .preset-chip:hover { background: rgba(255,215,0,0.18); }
+    .preset-chip.clear {
+        background: rgba(244,67,54,0.08);
+        border-color: rgba(244,67,54,0.25);
+        color: #f44336;
     }
 
     .submit-btn {
@@ -560,55 +701,20 @@
 
     /* ========== RESPONSIVE ========== */
     @@media (max-width: 900px) {
-        .order-page {
-            height: auto;
-        }
-
-        .order-body {
-            grid-template-columns: 1fr;
-        }
-
-        .side-pane {
-            order: -1;
-            max-height: none;
-        }
-
-        .product-list {
-            max-height: 60vh;
-        }
-
-        .cart-lines {
-            max-height: 140px;
-        }
+        .order-page { height: auto; }
+        .order-body { grid-template-columns: 1fr; }
+        .side-pane { order: -1; max-height: none; }
+        .product-list { max-height: 60vh; }
+        .cart-lines { max-height: 140px; }
     }
 
     @@media (max-width: 600px) {
-        .order-header h3 {
-            font-size: 20px;
-        }
-
-        .header-total strong {
-            font-size: 16px;
-        }
-
-        .product-row {
-            padding: 10px;
-        }
-
-        .product-title {
-            font-size: 14px;
-        }
-
-        .step-btn {
-            width: 30px;
-            height: 30px;
-            font-size: 18px;
-        }
-
-        .qty {
-            min-width: 26px;
-            font-size: 15px;
-        }
+        .order-header h3 { font-size: 20px; }
+        .header-total strong { font-size: 16px; }
+        .product-row { padding: 10px; }
+        .product-title { font-size: 14px; }
+        .step-btn { width: 30px; height: 30px; font-size: 18px; }
+        .qty { min-width: 26px; font-size: 15px; }
     }
 </style>
 
@@ -618,6 +724,7 @@
     [Inject] private ICustomerService CustomerService { get; set; } = default!;
     [Inject] private IOrderService OrderService { get; set; } = default!;
     [Inject] private IBranchService BranchService { get; set; } = default!;
+    [Inject] private IBranchAvailabilityService AvailabilityService { get; set; } = default!;
     [Inject] private ISnackbar Snackbar { get; set; } = default!;
     [Inject] private NavigationManager Nav { get; set; } = default!;
 
@@ -625,6 +732,7 @@
     private List<ProductCategory> categories = new();
     private List<Branch> branches = new();
     private List<OrderLineDto> cart = new();
+    private HashSet<long> branchAvailableProductIds = new();
 
     private string searchString = "";
     private long selectedCategoryId = 0;
@@ -634,12 +742,44 @@
     private bool isBusiness;
     private Customer? customer;
 
-    private long branchId { get; set; }
+    private long branchId;
     private bool saving;
 
-    private decimal subTotal => cart.Sum(l => l.LineTotal);
-    private decimal total => subTotal;
+    private OrderChannel channel = OrderChannel.InStore;
 
+    // Discount
+    private bool discountIsPercent;
+    private decimal discountInput;
+
+    // Tax
+    private bool taxEnabled = true;
+    private decimal taxPercent = 10m;    // default 10%
+
+    // ===================== COMPUTED =====================
+    private decimal subTotal => cart.Sum(l => l.LineTotal);
+
+    private decimal orderDiscount
+    {
+        get
+        {
+            if (discountInput <= 0) return 0;
+            var raw = discountIsPercent
+                ? subTotal * discountInput / 100m
+                : discountInput;
+            return Math.Min(raw, subTotal);   // never exceed subtotal
+        }
+    }
+
+    private decimal taxableAmount => Math.Max(0, subTotal - orderDiscount);
+
+    private decimal taxAmount =>
+        taxEnabled && taxPercent > 0
+            ? taxableAmount * taxPercent / 100m
+            : 0m;
+
+    private decimal total => taxableAmount + taxAmount;
+
+    // ===================== FILTERS =====================
     private IEnumerable<Product> FilteredProducts =>
         allProducts
             .Where(p => selectedCategoryId == 0 || p.ProductCategoryId == selectedCategoryId)
@@ -647,28 +787,20 @@
                         || p.Title.Contains(searchString, StringComparison.OrdinalIgnoreCase))
             .OrderBy(p => p.Title);
 
-
-    protected override void OnAfterRender(bool firstRender)
+    // ===================== LIFECYCLE =====================
+    protected override void OnInitialized()
     {
-        if (firstRender)
-        {
-            ClearCart();
-            allProducts = ProductService.GetAll(null, true);   // only available
-            categories = CategoryService.GetAll(0, 0, null);
-            branches = BranchService.GetAll();
-            branchId = branches.FirstOrDefault()?.BranchId ?? 0;
-            StateHasChanged();
-        }
-    }  
+        allProducts = ProductService.GetAll(null, true);
+        categories = CategoryService.GetAll(0, 0, null);
+        // branches = BranchService.GetAll();
+        // branchId = branches.FirstOrDefault()?.BranchId ?? 0;
+        branches = BranchService.GetMyBranches();
+        branchId = branches.FirstOrDefault()?.BranchId ?? 0;
 
-    // protected override void OnInitialized()
-    // {
-    //     allProducts = ProductService.GetAll(null, true);   // only available
-    //     categories = CategoryService.GetAll(0, 0, null);
-    //     branches = BranchService.GetAll();
-    //     branchId = branches.FirstOrDefault()?.BranchId ?? 0;
-    // }
+        LoadBranchAvailability();
+    }
 
+    // ===================== PRODUCTS =====================
     private void SelectCategory(long id) => selectedCategoryId = id;
 
     private OrderLineDto? GetOrCreateLine(Product p) =>
@@ -705,6 +837,13 @@
             cart.Remove(line);
     }
 
+    private void ClearCart()
+    {
+        cart.Clear();
+        discountInput = 0;
+    }
+
+    // ===================== CUSTOMER =====================
     private void OnPhoneChanged(string value)
     {
         phone = value ?? "";
@@ -720,7 +859,6 @@
 
     private void RecalcPrices()
     {
-        // Recalculate all cart line prices when customer type changes
         foreach (var line in cart)
         {
             var p = allProducts.FirstOrDefault(x => x.ProductId == line.ProductId);
@@ -728,11 +866,42 @@
         }
     }
 
-    private void ClearCart()
+    // ===================== BRANCH =====================
+    private void OnBranchChanged()
     {
-        cart.Clear();
+        LoadBranchAvailability();
     }
 
+    private void LoadBranchAvailability()
+    {
+        var rows = AvailabilityService.GetByBranch(branchId)
+            .ToDictionary(a => a.ProductId, a => a.IsAvailable);
+
+        branchAvailableProductIds = allProducts
+            .Where(p => !rows.TryGetValue(p.ProductId, out var avail) || avail)
+            .Select(p => p.ProductId)
+            .ToHashSet();
+    }
+
+    // ===================== DISCOUNT / TAX =====================
+    private void ApplyPercentDiscount(decimal percent)
+    {
+        discountIsPercent = true;
+        discountInput = percent;
+    }
+
+    private void ClearDiscount()
+    {
+        discountInput = 0;
+        discountIsPercent = false;
+    }
+
+    private void ToggleTax()
+    {
+        taxEnabled = !taxEnabled;
+    }
+
+    // ===================== SUBMIT =====================
     private void Submit()
     {
         if (cart.Count == 0) { Snackbar.Add("سبد خالی است", Severity.Warning); return; }
@@ -744,10 +913,13 @@
             var dto = new SubmitOrderDto
             {
                 BranchId = branchId,
+                Channel = channel,
                 CustomerPhone = phone?.Trim(),
                 CustomerName = customerName?.Trim(),
                 CustomerIsBusiness = isBusiness,
                 Items = cart,
+                OrderDiscount = orderDiscount,
+                Tax = taxAmount,
                 Payments = new List<PaymentDto>
                 {
                     new PaymentDto { Method = PaymentMethod.Cash, Amount = total }
@@ -757,6 +929,9 @@
             var (order, cust, created) = OrderService.SubmitOrder(dto);
             Snackbar.Add($"سفارش {order.OrderNumber} ثبت شد" +
                          (created ? " — مشتری جدید ایجاد شد" : ""), Severity.Success);
+
+            cart.Clear();
+            discountInput = 0;
             Nav.NavigateTo("/admin/orders");
         }
         catch (Exception ex)

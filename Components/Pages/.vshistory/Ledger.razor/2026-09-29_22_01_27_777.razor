@@ -1,0 +1,496 @@
+﻿@page "/admin/ledger"
+@attribute [Authorize(Roles = "Owner,Accountant,BranchManager")]
+@rendermode InteractiveServer
+@layout Components.Layout.AdminLayout
+@using Lumen.Components.Pages.Dialogs
+@using Lumen.Models
+@using Lumen.Models.Enums
+@using Lumen.Services.BranchServices
+@using Lumen.Services.LedgerServices
+@using MudBlazor
+@using System.Globalization
+@inject ILedgerService LedgerService
+@inject IBranchService BranchService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+<MudDialogProvider/>
+<PageTitle>حسابداری - پنل قهوه</PageTitle>
+
+<div style="width:100%;">
+
+    <!-- Header -->
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
+        <div>
+            <h3 style="margin:0; background: linear-gradient(135deg,#FFD700,#FFB800); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-size:28px; font-weight:700;">
+                💰 حسابداری
+            </h3>
+            <p style="color: rgba(255,255,255,0.4); margin:4px 0 0 0; font-size:14px;">درآمد و هزینه شعبه‌ها</p>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                       StartIcon="@Icons.Material.Filled.Category"
+                       OnClick="@(() => Nav.NavigateTo("/admin/ledger/categories"))">
+                دسته‌بندی‌ها
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Info"
+                       StartIcon="@Icons.Material.Filled.BarChart"
+                       OnClick="@(() => Nav.NavigateTo("/admin/reports"))">
+                گزارشات
+            </MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Warning"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="OpenCreateDialog">
+                سند جدید
+            </MudButton>
+        </div>
+    </div>
+
+    <!-- Summary cards -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin-bottom:24px;">
+        <div class="summary-card income">
+            <div class="summary-label">کل درآمد</div>
+            <div class="summary-value">@summary.TotalIncome.ToString("N0")</div>
+            <div class="summary-sub">تومان</div>
+        </div>
+        <div class="summary-card expense">
+            <div class="summary-label">کل هزینه</div>
+            <div class="summary-value">@summary.TotalExpense.ToString("N0")</div>
+            <div class="summary-sub">تومان</div>
+        </div>
+        <div class="summary-card @(summary.NetProfit >= 0 ? "profit" : "loss")">
+            <div class="summary-label">@(summary.NetProfit >= 0 ? "سود" : "زیان")</div>
+            <div class="summary-value">@Math.Abs(summary.NetProfit).ToString("N0")</div>
+            <div class="summary-sub">تومان</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-label">تعداد اسناد</div>
+            <div class="summary-value">@summary.EntryCount</div>
+            <div class="summary-sub">مورد</div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div style="display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap; align-items:end;">
+        <MudSelect T="long" @bind-Value="filterBranchId" @bind-Value:after="Load"
+                   Label="شعبه" Variant="Variant.Outlined" Dense="true" Style="min-width:180px;">
+            <MudSelectItem T="long" Value="0L">همه شعبه‌ها</MudSelectItem>
+            @foreach (var b in branches)
+            {
+                <MudSelectItem T="long" Value="@b.BranchId">@b.Title</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudSelect T="long" @bind-Value="filterCategoryId" @bind-Value:after="Load"
+                   Label="دسته" Variant="Variant.Outlined" Dense="true" Style="min-width:180px;">
+            <MudSelectItem T="long" Value="0L">همه دسته‌ها</MudSelectItem>
+            @foreach (var c in categories)
+            {
+                <MudSelectItem T="long" Value="@c.LedgerCategoryId">@c.Title</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudSelect T="LedgerEntryType?" @bind-Value="filterType" @bind-Value:after="Load"
+                   Label="نوع" Variant="Variant.Outlined" Dense="true" Style="min-width:140px;">
+            <MudSelectItem T="LedgerEntryType?" Value="(LedgerEntryType?)null">همه</MudSelectItem>
+            <MudSelectItem T="LedgerEntryType?" Value="LedgerEntryType.Income">درآمد</MudSelectItem>
+            <MudSelectItem T="LedgerEntryType?" Value="LedgerEntryType.Expense">هزینه</MudSelectItem>
+        </MudSelect>
+
+        <MudDatePicker @bind-Date="filterFrom" @bind-Date:after="Load"
+                       Label="از" Immediate="true" Dense="true" Culture="culture" />
+        <MudDatePicker @bind-Date="filterTo" @bind-Date:after="Load"
+                       Label="تا" Immediate="true" Dense="true" Culture="culture" />
+
+        <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="ClearFilters">
+            پاک کردن
+        </MudButton>
+    </div>
+
+    <!-- Quick date presets -->
+    <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+        <button class="preset-btn" @onclick="() => ApplyPreset(DatePreset.Today)">امروز</button>
+        <button class="preset-btn" @onclick="() => ApplyPreset(DatePreset.Yesterday)">دیروز</button>
+        <button class="preset-btn" @onclick="() => ApplyPreset(DatePreset.ThisWeek)">این هفته</button>
+        <button class="preset-btn" @onclick="() => ApplyPreset(DatePreset.ThisMonth)">این ماه</button>
+        <button class="preset-btn" @onclick="() => ApplyPreset(DatePreset.LastMonth)">ماه گذشته</button>
+        <button class="preset-btn" @onclick="() => ApplyPreset(DatePreset.ThisYear)">سال جاری</button>
+    </div>
+
+    <!-- Table -->
+    @if (loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Warning" />
+    }
+    else if (entries.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info">هیچ سندی با این فیلترها یافت نشد.</MudAlert>
+    }
+    else
+    {
+        <div style="background: rgba(255,255,255,0.02); border-radius:16px; border:1px solid rgba(255,255,255,0.03); overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; min-width:1000px;">
+                <thead style="background: rgba(255,215,0,0.05);">
+                    <tr>
+                        <th class="th">تاریخ</th>
+                        <th class="th">شعبه</th>
+                        <th class="th">دسته</th>
+                        <th class="th">شرح</th>
+                        <th class="th">روش پرداخت</th>
+                        <th class="th">مبلغ (تومان)</th>
+                        <th class="th">ثبت‌کننده</th>
+                        <th class="th">فایل</th>
+                        <th class="th">عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var e in entries)
+                    {
+                        var entry = e;
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                            <td class="td" style="color:rgba(255,255,255,0.7); font-size:13px;">
+                                @entry.OccurredAt.ToString("yyyy/MM/dd", culture)
+                            </td>
+                            <td class="td" style="color:rgba(255,255,255,0.75);">@entry.BranchTitle</td>
+                            <td class="td">
+                                <span class="cat-chip @(entry.Type == LedgerEntryType.Income ? "chip-income" : "chip-expense")">
+                                    @entry.CategoryTitle
+                                </span>
+                            </td>
+                            <td class="td" style="color:rgba(255,255,255,0.65); max-width:260px;">
+                                @if (!string.IsNullOrEmpty(entry.Description))
+                                {
+                                    @entry.Description
+                                }
+                                else
+                                {
+                                    <span style="color:rgba(255,255,255,0.3);">—</span>
+                                }
+                                @if (entry.OrderId.HasValue)
+                                {
+                                    <span class="tag-mini">سفارش #@entry.OrderId</span>
+                                }
+                            </td>
+                            <td class="td">
+                                @if (entry.PaymentMethod.HasValue)
+                                {
+                                    <span style="color:rgba(255,255,255,0.6); font-size:12px;">
+                                        @PaymentMethodLabel(entry.PaymentMethod.Value)
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span style="color:rgba(255,255,255,0.3);">—</span>
+                                }
+                            </td>
+                            <td class="td" style="font-weight:700;
+                                        color:@(entry.Type == LedgerEntryType.Income ? "#66bb6a" : "#f44336");">
+                                @(entry.Type == LedgerEntryType.Income ? "+" : "−")@entry.Amount.ToString("N0")
+                            </td>
+                            <td class="td" style="color:rgba(255,255,255,0.55); font-size:12px;">
+                                @(string.IsNullOrEmpty(entry.CreatedByName) ? "—" : entry.CreatedByName)
+                            </td>
+                            <td class="td">
+                                @if (entry.AttachmentCount > 0)
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.AttachFile"
+                                                   Color="Color.Info" Size="Size.Small"
+                                                   OnClick="@(() => OpenAttachmentsDialog(entry))"
+                                                   Title="@($"{entry.AttachmentCount} فایل پیوست")" />
+                                }
+                                else
+                                {
+                                    <span style="color:rgba(255,255,255,0.25); font-size:12px;">—</span>
+                                }
+                            </td>
+                            <td class="td">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Warning"
+                                               Size="Size.Small"
+                                               OnClick="@(() => OpenEditDialog(entry))" Title="ویرایش" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                               Size="Size.Small"
+                                               OnClick="@(() => DeleteEntry(entry))" Title="حذف" />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div style="text-align:left; margin-top:12px; color:rgba(255,255,255,0.4); font-size:12px;">
+            نمایش @entries.Count سند
+        </div>
+    }
+</div>
+
+<style>
+    .summary-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,215,0,0.08);
+        border-radius: 16px;
+        padding: 18px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        position: relative;
+        overflow: hidden;
+    }
+    .summary-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0;
+        width: 4px; height: 100%;
+        background: rgba(255,215,0,0.6);
+    }
+    .summary-card.income::before { background: #66bb6a; }
+    .summary-card.expense::before { background: #f44336; }
+    .summary-card.profit::before { background: #66bb6a; }
+    .summary-card.loss::before { background: #f44336; }
+
+    .summary-label {
+        color: rgba(255,255,255,0.5);
+        font-size: 13px;
+    }
+    .summary-value {
+        color: #fff;
+        font-size: 24px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+    }
+    .summary-card.income .summary-value { color: #66bb6a; }
+    .summary-card.expense .summary-value { color: #f44336; }
+    .summary-card.profit .summary-value { color: #66bb6a; }
+    .summary-card.loss .summary-value { color: #f44336; }
+
+    .summary-sub {
+        color: rgba(255,255,255,0.3);
+        font-size: 11px;
+    }
+
+    .th {
+        color: #FFD700;
+        font-weight: 600;
+        padding: 14px;
+        text-align: right;
+        border-bottom: 2px solid rgba(255,215,0,0.08);
+        font-size: 13px;
+    }
+    .td {
+        padding: 14px;
+        color: rgba(255,255,255,0.85);
+        font-size: 13px;
+    }
+
+    .cat-chip {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        border: 1px solid;
+    }
+    .chip-income {
+        color: #66bb6a;
+        border-color: rgba(102,187,106,0.3);
+        background: rgba(102,187,106,0.08);
+    }
+    .chip-expense {
+        color: #f44336;
+        border-color: rgba(244,67,54,0.3);
+        background: rgba(244,67,54,0.08);
+    }
+
+    .tag-mini {
+        display: inline-block;
+        margin-inline-start: 6px;
+        padding: 1px 6px;
+        font-size: 10px;
+        border-radius: 6px;
+        background: rgba(79,195,247,0.1);
+        color: #4fc3f7;
+        vertical-align: middle;
+    }
+
+    .preset-btn {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,215,0,0.1);
+        color: rgba(255,255,255,0.6);
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        cursor: pointer;
+        font-family: inherit;
+        transition: all 0.2s ease;
+    }
+    .preset-btn:hover {
+        background: rgba(255,215,0,0.08);
+        color: #FFD700;
+        border-color: rgba(255,215,0,0.3);
+    }
+</style>
+
+@code {
+    private CultureInfo culture = new("fa-IR");
+
+    private List<LedgerEntryDto> entries = new();
+    private List<Branch> branches = new();
+    private List<LedgerCategory> categories = new();
+    private LedgerSummaryDto summary = new();
+
+    private long filterBranchId;
+    private long filterCategoryId;
+    private LedgerEntryType? filterType;
+    private DateTime? filterFrom;
+    private DateTime? filterTo;
+
+    private bool loading;
+
+    private enum DatePreset { Today, Yesterday, ThisWeek, ThisMonth, LastMonth, ThisYear }
+
+    protected override void OnInitialized()
+    {
+        branches = BranchService.GetAll();
+        categories = LedgerService.GetCategories();
+        Load();
+    }
+
+    private LedgerFilterDto BuildFilter() => new()
+    {
+        BranchId = filterBranchId > 0 ? filterBranchId : null,
+        CategoryId = filterCategoryId > 0 ? filterCategoryId : null,
+        Type = filterType,
+        From = filterFrom,
+        To = filterTo
+    };
+
+    private void Load()
+    {
+        loading = true;
+        var f = BuildFilter();
+        entries = LedgerService.GetEntries(f);
+        summary = LedgerService.GetSummary(f);
+        loading = false;
+    }
+
+    private void ClearFilters()
+    {
+        filterBranchId = 0;
+        filterCategoryId = 0;
+        filterType = null;
+        filterFrom = null;
+        filterTo = null;
+        Load();
+    }
+
+    private void ApplyPreset(DatePreset preset)
+    {
+        var today = DateTime.Today;
+        switch (preset)
+        {
+            case DatePreset.Today:
+                filterFrom = today; filterTo = today; break;
+            case DatePreset.Yesterday:
+                filterFrom = today.AddDays(-1); filterTo = today.AddDays(-1); break;
+            case DatePreset.ThisWeek:
+                int dow = (int)today.DayOfWeek;
+                int diff = dow == 6 ? 0 : dow + 1;   // Saturday is the first day of the week in fa-IR
+                filterFrom = today.AddDays(-diff); filterTo = today; break;
+            case DatePreset.ThisMonth:
+                filterFrom = new DateTime(today.Year, today.Month, 1); filterTo = today; break;
+            case DatePreset.LastMonth:
+                var firstOfThis = new DateTime(today.Year, today.Month, 1);
+                filterFrom = firstOfThis.AddMonths(-1);
+                filterTo = firstOfThis.AddDays(-1); break;
+            case DatePreset.ThisYear:
+                filterFrom = new DateTime(today.Year, 1, 1); filterTo = today; break;
+        }
+        Load();
+    }
+
+    // ---------------- Dialog openers ----------------
+
+    private async Task OpenCreateDialog()
+    {
+        var parameters = new DialogParameters
+        {
+            ["Entry"] = new LedgerEntryDto
+            {
+                OccurredAt = DateTime.Now,
+                Type = LedgerEntryType.Expense
+            },
+            ["Branches"] = branches,
+            ["Categories"] = categories,
+            ["IsEdit"] = false
+        };
+        var dialog = await DialogService.ShowAsync<LedgerEntryDialog>("", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false });
+
+        var result = await dialog.Result;
+        if (!result.Canceled && result.Data is true)
+        {
+            Load();
+            Snackbar.Add("سند ثبت شد", Severity.Success);
+        }
+    }
+
+    private async Task OpenEditDialog(LedgerEntryDto entry)
+    {
+        var parameters = new DialogParameters
+        {
+            ["Entry"] = entry,
+            ["Branches"] = branches,
+            ["Categories"] = categories,
+            ["IsEdit"] = true
+        };
+        var dialog = await DialogService.ShowAsync<LedgerEntryDialog>("", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false });
+
+        var result = await dialog.Result;
+        if (!result.Canceled && result.Data is true)
+        {
+            Load();
+            Snackbar.Add("سند بروزرسانی شد", Severity.Success);
+        }
+    }
+
+    private async Task OpenAttachmentsDialog(LedgerEntryDto entry)
+    {
+        var parameters = new DialogParameters
+        {
+            ["Entry"] = entry
+        };
+        var dialog = await DialogService.ShowAsync<LedgerAttachmentsDialog>("", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, BackdropClick = true });
+
+        var result = await dialog.Result;
+        if (!result.Canceled && result.Data is true)
+        {
+            Load();
+        }
+    }
+
+    private async Task DeleteEntry(LedgerEntryDto entry)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync(
+            "حذف سند",
+            $"حذف سند «{entry.CategoryTitle} — {entry.Amount:N0} تومان» مطمئن هستید؟",
+            "حذف", "انصراف");
+
+        if (confirm == true)
+        {
+            LedgerService.DeleteEntry(entry.CashLedgerEntryId);
+            Load();
+            Snackbar.Add("سند حذف شد", Severity.Success);
+        }
+    }
+
+    private static string PaymentMethodLabel(PaymentMethod m) => m switch
+    {
+        PaymentMethod.Cash => "نقدی",
+        PaymentMethod.Card => "کارتی",
+        PaymentMethod.Online => "آنلاین",
+        PaymentMethod.Wallet => "کیف پول",
+        PaymentMethod.Other => "سایر",
+        _ => "—"
+    };
+}

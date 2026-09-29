@@ -254,6 +254,44 @@ namespace Lumen.Migrations
                     b.ToTable("BranchInventories", "dbo");
                 });
 
+            modelBuilder.Entity("Lumen.Models.BranchProductAvailability", b =>
+                {
+                    b.Property<long>("BranchProductAvailabilityId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("BranchProductAvailabilityId"));
+
+                    b.Property<long>("BranchId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsAvailable")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<long>("ProductId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("BranchProductAvailabilityId");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("BranchId", "IsAvailable");
+
+                    b.HasIndex("BranchId", "ProductId")
+                        .IsUnique();
+
+                    b.ToTable("BranchProductAvailabilities", "dbo");
+                });
+
             modelBuilder.Entity("Lumen.Models.CashLedgerEntry", b =>
                 {
                     b.Property<long>("CashLedgerEntryId")
@@ -289,6 +327,9 @@ namespace Lumen.Migrations
 
                     b.Property<long?>("OrderId")
                         .HasColumnType("bigint");
+
+                    b.Property<int?>("PaymentMethod")
+                        .HasColumnType("int");
 
                     b.Property<long?>("StockTransactionId")
                         .HasColumnType("bigint");
@@ -813,6 +854,11 @@ namespace Lumen.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<int>("Kind")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
                     b.Property<long>("ProductCategoryId")
                         .HasColumnType("bigint");
 
@@ -829,6 +875,8 @@ namespace Lumen.Migrations
                         .HasColumnType("nvarchar(20)");
 
                     b.HasKey("ProductId");
+
+                    b.HasIndex("Kind");
 
                     b.HasIndex("ProductCategoryId");
 
@@ -856,6 +904,42 @@ namespace Lumen.Migrations
                     b.HasKey("ProductCategoryId");
 
                     b.ToTable("ProductCategories", "dbo");
+                });
+
+            modelBuilder.Entity("Lumen.Models.ProductRecipe", b =>
+                {
+                    b.Property<long>("ProductRecipeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("ProductRecipeId"));
+
+                    b.Property<long>("ComponentProductId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Condition")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<long>("ParentProductId")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.HasKey("ProductRecipeId");
+
+                    b.HasIndex("ComponentProductId");
+
+                    b.HasIndex("ParentProductId");
+
+                    b.ToTable("ProductRecipes", "dbo");
                 });
 
             modelBuilder.Entity("Lumen.Models.StockTransaction", b =>
@@ -1183,6 +1267,25 @@ namespace Lumen.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("Lumen.Models.BranchProductAvailability", b =>
+                {
+                    b.HasOne("Lumen.Models.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Lumen.Models.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Product");
+                });
+
             modelBuilder.Entity("Lumen.Models.CashLedgerEntry", b =>
                 {
                     b.HasOne("Lumen.Models.Branch", "Branch")
@@ -1314,6 +1417,25 @@ namespace Lumen.Migrations
                         .HasForeignKey("ProductCategoryId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Lumen.Models.ProductRecipe", b =>
+                {
+                    b.HasOne("Lumen.Models.Product", "ComponentProduct")
+                        .WithMany()
+                        .HasForeignKey("ComponentProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Lumen.Models.Product", "ParentProduct")
+                        .WithMany()
+                        .HasForeignKey("ParentProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ComponentProduct");
+
+                    b.Navigation("ParentProduct");
                 });
 
             modelBuilder.Entity("Lumen.Models.StockTransaction", b =>

@@ -40,17 +40,17 @@ namespace Lumen.InfraStructure
         {
             await this.dbContext.SaveChangesAsync();
         }
-        public async Task<T> Update(T item)
-        {
-            dbContext.Update(item);
-            await dbContext.SaveChangesAsync();
-            return item;
-        }
-        public void VoidUpdate(T item)
-        {
-            dbContext.Update(item);
-            dbContext.SaveChanges();
-        }
+        //public async Task<T> Update(T item)
+        //{
+        //    dbContext.Update(item);
+        //    await dbContext.SaveChangesAsync();
+        //    return item;
+        //}
+        //public void VoidUpdate(T item)
+        //{
+        //    dbContext.Update(item);
+        //    dbContext.SaveChanges();
+        //}
         public IQueryable<T> GetQuery()
         {
             return dbContext.Set<T>().Where(z => z.IsDeleted == false).AsQueryable();
@@ -96,5 +96,71 @@ namespace Lumen.InfraStructure
         //        return null;
         //    }
         //}
+
+        public async Task<T> Update(T item)
+        {
+            // 1) Ensure only one tracked instance exists for this key
+            DetachConflictingTracked(item);
+
+            // 2) Attach the incoming entity as Modified
+            dbContext.Update(item);
+
+            await dbContext.SaveChangesAsync();
+            return item;
+        }
+
+        public void VoidUpdate(T item)
+        {
+            DetachConflictingTracked(item);
+            dbContext.Update(item);
+            dbContext.SaveChanges();
+        }
+
+        /// <summary>
+        /// If EF is already tracking an entity of the same type with the same primary key
+        /// (a different C# instance), detach that one so the incoming entity can be attached.
+        /// </summary>
+        private void DetachConflictingTracked(T item)
+        {
+            var entry = dbContext.Entry(item);
+            if (entry.State != EntityState.Detached)
+                return;   // this exact instance is already tracked → nothing to do
+
+            var entityType = dbContext.Model.FindEntityType(typeof(T));
+            if (entityType == null) return;
+
+            var keyProperties = entityType.FindPrimaryKey()?.Properties;
+            if (keyProperties == null || keyProperties.Count == 0) return;
+
+            // Get the incoming entity's key values
+            var incomingKeyValues = keyProperties
+                .Select(p =>
+                {
+                    var prop = typeof(T).GetProperty(p.Name);
+                    return prop?.GetValue(item);
+                })
+                .ToArray();
+
+            // Look for a different tracked instance with the same key
+            var conflicting = dbContext.ChangeTracker.Entries<T>()
+                .FirstOrDefault(e =>
+                    !ReferenceEquals(e.Entity, item) &&
+                    KeyMatches(e.Entity, keyProperties.Select(p => p.Name).ToArray(), incomingKeyValues));
+
+            if (conflicting != null)
+                conflicting.State = EntityState.Detached;
+        }
+
+        private static bool KeyMatches(T entity, string[] keyNames, object?[] keyValues)
+        {
+            for (int i = 0; i < keyNames.Length; i++)
+            {
+                var prop = typeof(T).GetProperty(keyNames[i]);
+                if (prop == null) return false;
+                var value = prop.GetValue(entity);
+                if (!Equals(value, keyValues[i])) return false;
+            }
+            return true;
+        }
     }
 }

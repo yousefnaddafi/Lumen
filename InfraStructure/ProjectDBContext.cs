@@ -11,15 +11,15 @@ namespace Lumen.InfraStructure
 
     public class ProjectDBContext : IdentityDbContext<AppUser, AppRole, string>
     {
-        private readonly CurrentUserState? _currentUser;
-
-        public ProjectDBContext() { }
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        //public ProjectDBContext() { }
 
         public ProjectDBContext(
             DbContextOptions<ProjectDBContext> options,
+            IHttpContextAccessor httpContextAccessor,
             CurrentUserState userState = null!) : base(options)
         {
-            _currentUser = userState;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         // ----- Menu / catalog -----
@@ -504,10 +504,16 @@ new AppRole { Id = "role-menu", Name = "MenuAdmin", NormalizedName = "MENUADMIN"
             Stamp();
             return base.SaveChanges();
         }
+
         private void Stamp()
         {
             var now = DateTime.UtcNow;
-            var userId = _currentUser?.UserId;
+
+            // Read directly from the cookie in the HttpContext
+            var userId = _httpContextAccessor.HttpContext?.User?
+                .FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId)) return; // No user logged in, skip stamping
 
             foreach (var entry in ChangeTracker.Entries())
             {

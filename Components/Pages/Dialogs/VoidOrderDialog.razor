@@ -1,0 +1,34 @@
+﻿@using MudBlazor
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6" Style="color:#f44336; font-weight:700;">
+            لغو سفارش @OrderNumber
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Style="color:rgba(255,255,255,0.7); margin-bottom:12px;">
+            با لغو، موجودی انبار برگشت داده می‌شود و استرداد در حسابداری ثبت می‌شود.
+        </MudText>
+        <MudTextField T="string" @bind-Value="reason" Label="دلیل لغو *"
+                      Variant="Variant.Outlined" Lines="2" Margin="Margin.Dense" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text" OnClick="Cancel">انصراف</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Error"
+                   OnClick="Confirm" Disabled="@string.IsNullOrWhiteSpace(reason)">
+            لغو سفارش
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public string OrderNumber { get; set; } = "";
+
+    private string reason = "";
+
+    private void Cancel() => MudDialog.Cancel();
+    private void Confirm() => MudDialog.Close(DialogResult.Ok(reason));
+}

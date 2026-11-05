@@ -17,6 +17,7 @@ namespace Lumen.Services.OrderServices
         private readonly IProjectEFRepository<StockTransaction> _stockRepo;
         private readonly IProjectEFRepository<LedgerCategory> _ledgerCatRepo;
         private readonly IProjectEFRepository<CashLedgerEntry> _ledgerRepo;
+        private readonly IProjectEFRepository<Branch> _branchRepo;
         private readonly ICustomerService _customerService;
         private readonly IRecipeService _recipeService;
         private readonly IBranchService _branchService;
@@ -28,6 +29,7 @@ namespace Lumen.Services.OrderServices
             IProjectEFRepository<OrderItem> itemRepo,
             IProjectEFRepository<Payment> paymentRepo,
             IProjectEFRepository<Product> productRepo,
+            IProjectEFRepository<Branch> branchRepo,
             IProjectEFRepository<BranchInventory> invRepo,
             IProjectEFRepository<StockTransaction> stockRepo,
             IProjectEFRepository<LedgerCategory> ledgerCatRepo,
@@ -48,13 +50,149 @@ namespace Lumen.Services.OrderServices
             _customerService = customerService;
             _recipeService = recipeService;
             _branchService = branchService;
+            _branchRepo = branchRepo;
             _db = db;
         }
+        public void CompleteOrder(long orderId)
+        {
+            var order = _orderRepo.GetQuery().FirstOrDefault(o => o.OrderId == orderId);
+            if (order == null) return;
+            if (order.Status == OrderStatus.Completed) return;
 
+            order.Status = OrderStatus.Completed;
+            order.CompletedAt = DateTime.Now;
+            _orderRepo.VoidUpdate(order);
+        }
+
+        public void VoidOrder(long orderId, string reason)
+        {
+            if (string.IsNullOrWhiteSpace(reason))
+                throw new InvalidOperationException("دلیل لغو الزامی است");
+
+            using var tx = _db.Database.BeginTransaction();
+            try
+            {
+                var order = _orderRepo.GetQuery().FirstOrDefault(o => o.OrderId == orderId);
+                if (order == null)
+                    throw new InvalidOperationException("سفارش یافت نشد");
+                if (order.Status == OrderStatus.Cancelled)
+                    throw new InvalidOperationException("این سفارش قبلاً لغو شده است");
+
+                // 1) Reverse stock movements: for each Sale transaction, write a Return
+                var saleTxs = _stockRepo.GetQuery()
+                    .Where(t => t.OrderId == orderId && t.Type == StockTransactionType.Sale)
+                    .ToList();
+
+                foreach (var sale in saleTxs)
+                {
+                    var inv = _invRepo.GetQuery()
+                        .FirstOrDefault(bi => bi.BranchId == order.BranchId && bi.ProductId == sale.ProductId);
+
+                    if (inv == null) continue;
+
+                    var reversedQty = -sale.Quantity;   // sale.Quantity is negative, so this is positive
+                    inv.QuantityOnHand += reversedQty;
+                    inv.LastUpdated = DateTime.Now;
+                    _invRepo.VoidUpdate(inv);
+
+                    _stockRepo.Insert(new StockTransaction
+                    {
+                        BranchId = order.BranchId,
+                        ProductId = sale.ProductId,
+                        Type = StockTransactionType.Return,
+                        Quantity = reversedQty,
+                        BalanceAfter = inv.QuantityOnHand,
+                        UnitCost = sale.UnitCost,
+                        OrderId = order.OrderId,
+                        Note = $"لغو سفارش {order.OrderNumber} — {reason}",
+                        IsDeleted = false
+                    });
+                }
+
+                // 2) Reverse ledger income: write an expense entry of the same amount under REFUND
+                var refundCat = _ledgerCatRepo.GetQuery().FirstOrDefault(c => c.Code == "REFUND");
+                var incomeEntries = _ledgerRepo.GetQuery()
+                    .Where(l => l.OrderId == orderId && l.Type == LedgerEntryType.Income)
+                    .ToList();
+
+                if (refundCat != null)
+                {
+                    foreach (var inc in incomeEntries)
+                    {
+                        _ledgerRepo.Insert(new CashLedgerEntry
+                        {
+                            BranchId = order.BranchId,
+                            LedgerCategoryId = refundCat.LedgerCategoryId,
+                            Type = LedgerEntryType.Expense,
+                            Amount = inc.Amount,
+                            PaymentMethod = inc.PaymentMethod,
+                            OrderId = order.OrderId,
+                            OccurredAt = DateTime.Now,
+                            Description = $"استرداد سفارش {order.OrderNumber} — {reason}",
+                            IsDeleted = false
+                        });
+                    }
+                }
+
+                // 3) Mark the order cancelled
+                order.Status = OrderStatus.Cancelled;
+                //order.Description ??= "";   // in case Description doesn't exist, remove this line
+                _orderRepo.VoidUpdate(order);
+
+                tx.Commit();
+            }
+            catch
+            {
+                tx.Rollback();
+                throw;
+            }
+        }
+
+        public OrderDetailDto? GetDetail(long orderId)
+        {
+            var order = _orderRepo.GetQuery().FirstOrDefault(o => o.OrderId == orderId);
+            if (order == null) return null;
+
+            var branch = _branchRepo.GetQuery().FirstOrDefault(b => b.BranchId == order.BranchId);
+            var items = _itemRepo.GetQuery().Where(i => i.OrderId == orderId).ToList();
+            var payments = _paymentRepo.GetQuery().Where(p => p.OrderId == orderId).ToList();
+
+            // User who created the order
+            string? createdByName = null;
+            if (!string.IsNullOrEmpty(order.CreatedByUserId))
+            {
+                var user = _db.Users.FirstOrDefault(u => u.Id == order.CreatedByUserId);
+                createdByName = user?.FullName ?? user?.UserName;
+            }
+
+            // Customer
+            string? customerName = order.CustomerName;
+            string? customerPhone = order.CustomerPhone;
+            if (order.CustomerId.HasValue)
+            {
+                var cust = _db.Customers.FirstOrDefault(c => c.CustomerId == order.CustomerId.Value);
+                customerName ??= cust?.FullName;
+                customerPhone ??= cust?.PhoneNumber;
+            }
+
+            return new OrderDetailDto
+            {
+                Order = order,
+                BranchTitle = branch?.Title ?? "",
+                Items = items,
+                Payments = payments,
+                CreatedByName = createdByName,
+                CustomerName = customerName,
+                CustomerPhone = customerPhone
+            };
+        }
         public (Order order, Customer? customer, bool customerCreated) SubmitOrder(SubmitOrderDto dto)
         {
             if (dto.Items == null || dto.Items.Count == 0)
                 throw new InvalidOperationException("سبد سفارش خالی است");
+
+            if (string.IsNullOrWhiteSpace(dto.CustomerPhone))
+                throw new InvalidOperationException("شماره مشتری الزامی است");
 
             using var tx = _db.Database.BeginTransaction();
             var allowedBranches = _branchService.GetMyBranches();
@@ -77,7 +215,7 @@ namespace Lumen.Services.OrderServices
                         dto.CustomerIsBusiness);
                     created = existing == null;
                 }
-
+                
                 // 2) Order header
                 var order = _orderRepo.Insert(new Order
                 {

@@ -64,4 +64,14 @@ namespace Lumen.Models
         public decimal Tax { get; set; }
         public List<PaymentDto> Payments { get; set; } = new();
     }
+    public class OrderDetailDto
+    {
+        public Order Order { get; set; } = null!;
+        public string BranchTitle { get; set; } = "";
+        public List<OrderItem> Items { get; set; } = new();
+        public List<Payment> Payments { get; set; } = new();
+        public string? CreatedByName { get; set; }
+        public string? CustomerName { get; set; }
+        public string? CustomerPhone { get; set; }
+    }
 }

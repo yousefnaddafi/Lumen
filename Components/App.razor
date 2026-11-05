@@ -21,7 +21,7 @@
 
 <body>
     <Routes @rendermode="InteractiveServer" />
-    @* <component type="typeof(App)" render-mode="ServerPrerendered" /> *@
+    
     <div id="blazor-error-ui">
         <environment include="Staging,Production">
             An error has occurred. This application may no longer respond until reloaded.
@@ -32,24 +32,14 @@
         <a href="" class="reload">Reload</a>
         <a class="dismiss">🗙</a>
     </div>
-    <script src="js/main.js"> </script>
+
+    <script src="js/main.js"></script>
     <script src="js/menu.js"></script>
+    
+    <!-- MUST BE UNCOMMENTED -->
     <script src="_framework/blazor.web.js"></script>
+    
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
-    <script>
-        // Force reconnection if Blazor disconnects
-        Blazor.start({
-            reconnectionOptions: {
-                maxRetries: 30,
-                retryIntervalMilliseconds: 2000,
-            },
-            configureSignalR: function (builder) {
-                builder.withUrl("/_blazor", {
-                    transport: 1 // WebSockets only
-                });
-            }
-        });
-    </script>
 </body>
 
 </html>

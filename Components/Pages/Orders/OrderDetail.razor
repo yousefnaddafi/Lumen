@@ -1,0 +1,396 @@
+﻿@page "/admin/orders/{OrderId:long}"
+@attribute [Authorize(Roles = "Owner,BranchManager,Cashier")]
+@rendermode InteractiveServer
+@layout Components.Layout.AdminLayout
+@using Lumen.Models
+@using Lumen.Models.Enums
+@using Lumen.Services.OrderServices
+@using MudBlazor
+@using Dialogs
+@using System.Globalization
+@inject IOrderService OrderService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+
+<PageTitle>جزئیات سفارش - پنل قهوه</PageTitle>
+<MudDialogProvider />
+@if (detail == null)
+{
+    <MudAlert Severity="Severity.Warning">سفارش یافت نشد.</MudAlert>
+    <MudButton Variant="Variant.Outlined" OnClick="@(() => Nav.NavigateTo("/admin/orders"))" Class="mt-3">
+        بازگشت به سفارشات
+    </MudButton>
+}
+else
+{
+    var order = detail.Order;
+
+    <div style="width:100%;">
+
+        <!-- Header -->
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
+            <div>
+                <h3 style="margin:0; background: linear-gradient(135deg,#FFD700,#FFB800); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-size:26px; font-weight:700;">
+                    🧾 سفارش @order.OrderNumber
+                </h3>
+                <p style="color: rgba(255,255,255,0.4); margin:4px 0 0 0; font-size:13px;">
+                    @order.CreatedAt.ToString("yyyy/MM/dd HH:mm", culture) — @detail.BranchTitle
+                </p>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                           OnClick="@(() => Nav.NavigateTo("/admin/orders"))">
+                    ← بازگشت
+                </MudButton>
+                @if (order.Status != OrderStatus.Cancelled && order.Status != OrderStatus.Completed)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Success"
+                               OnClick="CompleteOrder">
+                        تکمیل سفارش
+                    </MudButton>
+                }
+                @if (order.Status != OrderStatus.Cancelled)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Error"
+                               OnClick="VoidOrder">
+                        لغو سفارش
+                    </MudButton>
+                }
+            </div>
+        </div>
+
+        <!-- Status / meta -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-bottom:20px;">
+            <div class="meta-card">
+                <div class="meta-label">وضعیت</div>
+                <div style="margin-top:6px;">
+                    <span class="status-chip @StatusClass(order.Status)">@StatusLabel(order.Status)</span>
+                </div>
+            </div>
+            <div class="meta-card">
+                <div class="meta-label">نوع سفارش</div>
+                <div class="meta-value">@(order.Channel == OrderChannel.Takeaway ? "بیرون‌بر" : "سالن")</div>
+            </div>
+            <div class="meta-card">
+                <div class="meta-label">مشتری</div>
+                <div class="meta-value">@(string.IsNullOrEmpty(detail.CustomerName) ? "—" : detail.CustomerName)</div>
+                @if (!string.IsNullOrEmpty(detail.CustomerPhone))
+                {
+                    <div class="meta-sub">@detail.CustomerPhone</div>
+                }
+            </div>
+            <div class="meta-card">
+                <div class="meta-label">ثبت‌کننده</div>
+                <div class="meta-value">@(string.IsNullOrEmpty(detail.CreatedByName) ? "—" : detail.CreatedByName)</div>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:2fr 1fr; gap:16px;">
+
+            <!-- Left: items -->
+            <div class="panel">
+                <h4 class="panel-title">اقلام سفارش</h4>
+
+                <table style="width:100%; border-collapse:collapse;">
+                    <thead>
+                        <tr style="border-bottom:1px solid rgba(255,215,0,0.15);">
+                            <th class="th">محصول</th>
+                            <th class="th">تعداد</th>
+                            <th class="th">قیمت واحد</th>
+                            <th class="th">تخفیف</th>
+                            <th class="th">جمع</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in detail.Items)
+                        {
+                            <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                                <td class="td">
+                                    @item.ProductTitleSnapshot
+                                    @if (!string.IsNullOrEmpty(item.Note))
+                                    {
+                                        <div style="color:rgba(255,255,255,0.4); font-size:11px; margin-top:2px;">@item.Note</div>
+                                    }
+                                </td>
+                                <td class="td">@item.Quantity.ToString("N2")</td>
+                                <td class="td">@item.UnitPrice.ToString("N0")</td>
+                                <td class="td" style="color:@(item.Discount > 0 ? "#f44336" : "rgba(255,255,255,0.3)");">
+                                    @(item.Discount > 0 ? $"{item.Discount:N0}" : "—")
+                                </td>
+                                <td class="td" style="color:#FFD700; font-weight:600;">@item.LineTotal.ToString("N0")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Right: totals + payments -->
+            <div style="display:flex; flex-direction:column; gap:16px;">
+
+                <!-- Totals -->
+                <div class="panel">
+                    <h4 class="panel-title">مبالغ</h4>
+                    <div class="total-row"><span>جمع اقلام:</span><span>@order.SubTotal.ToString("N0")</span></div>
+                    @if (order.Discount > 0)
+                    {
+                        <div class="total-row" style="color:#f44336;">
+                            <span>تخفیف:</span><span>− @order.Discount.ToString("N0")</span>
+                        </div>
+                    }
+                    @if (order.Tax > 0)
+                    {
+                        <div class="total-row" style="color:#4fc3f7;">
+                            <span>مالیات:</span><span>+ @order.Tax.ToString("N0")</span>
+                        </div>
+                    }
+                    <div class="total-row total-final">
+                        <span>مبلغ نهایی:</span><span>@order.Total.ToString("N0") تومان</span>
+                    </div>
+                </div>
+
+                <!-- Payments -->
+                <div class="panel">
+                    <h4 class="panel-title">پرداخت‌ها</h4>
+                    @if (detail.Payments.Count == 0)
+                    {
+                        <div style="color:rgba(255,255,255,0.3); font-size:13px; text-align:center; padding:10px;">
+                            هیچ پرداختی ثبت نشده
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var p in detail.Payments)
+                        {
+                            <div class="total-row">
+                                <span style="color:rgba(255,255,255,0.7);">@PaymentMethodLabel(p.Method)</span>
+                                <span style="color:#66bb6a;">@p.Amount.ToString("N0")</span>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .meta-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,215,0,0.08);
+        border-radius: 12px;
+        padding: 12px 14px;
+    }
+
+    .meta-label {
+        color: rgba(255,255,255,0.4);
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .meta-value {
+        color: #fff;
+        font-size: 15px;
+        font-weight: 600;
+        margin-top: 4px;
+    }
+
+    .meta-sub {
+        color: rgba(255,255,255,0.4);
+        font-size: 12px;
+        margin-top: 2px;
+    }
+
+    .panel {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.03);
+        border-radius: 16px;
+        padding: 20px;
+    }
+
+    .panel-title {
+        color: #FFD700;
+        margin: 0 0 14px 0;
+        font-size: 15px;
+        font-weight: 700;
+    }
+
+    .th {
+        color: #FFD700;
+        font-weight: 600;
+        padding: 10px;
+        text-align: right;
+        font-size: 12px;
+    }
+
+    .td {
+        padding: 10px;
+        color: rgba(255,255,255,0.85);
+        font-size: 13px;
+    }
+
+    .total-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        color: rgba(255,255,255,0.75);
+        font-size: 13px;
+    }
+
+    .total-final {
+        border-top: 1px solid rgba(255,215,0,0.15);
+        margin-top: 8px;
+        padding-top: 12px;
+        color: #FFD700;
+        font-weight: 700;
+        font-size: 16px;
+    }
+
+    .status-chip {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        border: 1px solid;
+    }
+
+    .st-draft {
+        color: rgba(255,255,255,0.4);
+        border-color: rgba(255,255,255,0.15);
+    }
+
+    .st-submitted {
+        color: #4fc3f7;
+        border-color: rgba(79,195,247,0.3);
+        background: rgba(79,195,247,0.08);
+    }
+
+    .st-preparing {
+        color: #FFB800;
+        border-color: rgba(255,184,0,0.3);
+        background: rgba(255,184,0,0.08);
+    }
+
+    .st-completed {
+        color: #66bb6a;
+        border-color: rgba(102,187,106,0.3);
+        background: rgba(102,187,106,0.08);
+    }
+
+    .st-cancelled {
+        color: #f44336;
+        border-color: rgba(244,67,54,0.3);
+        background: rgba(244,67,54,0.08);
+    }
+
+    .st-returned {
+        color: #b0bec5;
+        border-color: rgba(176,190,197,0.3);
+        background: rgba(176,190,197,0.08);
+    }
+
+    @@media (max-width: 900px) {
+        div[style*="grid-template-columns:2fr 1fr"] {
+            grid-template-columns: 1fr !important;
+        }
+    }
+</style>
+
+@code {
+    [Parameter] public long OrderId { get; set; }
+
+    private CultureInfo culture = new("fa-IR");
+    private OrderDetailDto? detail;
+
+    protected override void OnParametersSet()
+    {
+        Load();
+    }
+
+    private void Load()
+    {
+        detail = OrderService.GetDetail(OrderId);
+    }
+
+    private async Task CompleteOrder()
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync(
+            "تکمیل سفارش",
+            "سفارش به عنوان تکمیل‌شده علامت‌گذاری شود؟",
+            "بله", "انصراف");
+
+        if (confirm == true)
+        {
+            try
+            {
+                OrderService.CompleteOrder(OrderId);
+                Load();
+                Snackbar.Add("سفارش تکمیل شد", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add("خطا: " + ex.Message, Severity.Error);
+            }
+        }
+    }
+
+    private async Task VoidOrder()
+    {
+        var parameters = new DialogParameters
+        {
+            ["OrderNumber"] = detail?.Order.OrderNumber ?? ""
+        };
+        var dialog = await DialogService.ShowAsync<VoidOrderDialog>("", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false });
+
+        var result = await dialog.Result;
+        if (!result.Canceled && result.Data is string reason && !string.IsNullOrWhiteSpace(reason))
+        {
+            try
+            {
+                OrderService.VoidOrder(OrderId, reason);
+                Load();
+                Snackbar.Add("سفارش لغو شد", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add("خطا: " + ex.Message, Severity.Error);
+            }
+        }
+    }
+
+    private static string StatusLabel(OrderStatus s) => s switch
+    {
+        OrderStatus.Draft => "پیش‌نویس",
+        OrderStatus.Submitted => "ثبت‌شده",
+        OrderStatus.Preparing => "در حال آماده‌سازی",
+        OrderStatus.Completed => "تکمیل‌شده",
+        OrderStatus.Cancelled => "لغو شده",
+        OrderStatus.Returned => "مرجوعی",
+        _ => "—"
+    };
+
+    private static string StatusClass(OrderStatus s) => s switch
+    {
+        OrderStatus.Draft => "st-draft",
+        OrderStatus.Submitted => "st-submitted",
+        OrderStatus.Preparing => "st-preparing",
+        OrderStatus.Completed => "st-completed",
+        OrderStatus.Cancelled => "st-cancelled",
+        OrderStatus.Returned => "st-returned",
+        _ => "st-draft"
+    };
+
+    private static string PaymentMethodLabel(PaymentMethod m) => m switch
+    {
+        PaymentMethod.Cash => "نقدی",
+        PaymentMethod.Card => "کارتی",
+        PaymentMethod.Online => "آنلاین",
+        PaymentMethod.Wallet => "کیف پول",
+        PaymentMethod.Other => "سایر",
+        _ => "—"
+    };
+}

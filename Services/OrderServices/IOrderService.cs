@@ -7,5 +7,8 @@ namespace Lumen.Services.OrderServices
         (Order order, Customer? customer, bool customerCreated) SubmitOrder(SubmitOrderDto dto);
         List<Order> GetByBranch(long branchId, DateTime? from = null, DateTime? to = null);
         Order? Get(long id);
+        OrderDetailDto? GetDetail(long orderId);
+        void VoidOrder(long orderId, string reason);
+        void CompleteOrder(long orderId);
     }
 }

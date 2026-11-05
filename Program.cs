@@ -2,8 +2,10 @@
 using Lumen.Extensions;
 using Lumen.InfraStructure;
 using Lumen.Models;
+using Lumen.Services.CommonServices;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server;
+using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
@@ -20,6 +22,7 @@ builder.Services.AddDbContext<ProjectDBContext>(o =>
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSession();
+builder.Services.AddScoped<CircuitHandler, CircuitUserAccessor>();
 builder.Services.AddMudServices();
 // --- Identity core ---
 builder.Services
